@@ -56,8 +56,8 @@ English:
 - `wifi_manager.c` 连接 Wi-Fi。
 - `api_client.c` 拉取 NAS Agent JSON。
 - `nas_status.c` 解析共享 API 契约字段。
-- `ui.c` 使用 LVGL v8.4 绘制彩色手绘风 7 页界面，Header 带页码圆点指示器，左右滑动切页，并按 NVS 映射渲染 1-7 号内置背景。
-- `web_server.c` 在 ESP 上提供 Web 后台，用于配置 NAS 主机名/IP、端口、可选 token、轮询间隔和页面背景，并通过 `/api/test` 从 ESP 侧测试 NAS Agent 健康接口。
+- `ui.c` 使用 LVGL v8.4 绘制彩色手绘风 7 页界面，Header 带页码圆点指示器，左右滑动切页。所有页面共用一张 1024×534 原生分辨率背景（由 `image/1.png` 转换嵌入）。
+- `web_server.c` 在 ESP 上提供 Web 后台，用于配置 NAS 主机名/IP、端口、可选 token 和轮询间隔，并通过 `/api/test` 从 ESP 侧测试 NAS Agent 健康接口。
 
 English:
 
@@ -65,8 +65,8 @@ English:
 - `wifi_manager.c` connects to Wi-Fi.
 - `api_client.c` fetches NAS Agent JSON.
 - `nas_status.c` parses the shared API contract.
-- `ui.c` renders a colorful hand-drawn 7-page LVGL v8.4 UI with header page dots and left/right swipe navigation, using the NVS mapping to apply embedded backgrounds 1-7.
-- `web_server.c` exposes an ESP-hosted Web backend for NAS hostname/IP, port, optional token, polling interval, and page backgrounds, and tests the NAS Agent health endpoint from the ESP side through `/api/test`.
+- `ui.c` renders a colorful hand-drawn 7-page LVGL v8.4 UI with header page dots and left/right swipe navigation. All pages share a single 1024×534 native-resolution background converted from `image/1.png`.
+- `web_server.c` exposes an ESP-hosted Web backend for NAS hostname/IP, port, optional token, and polling interval, and tests the NAS Agent health endpoint from the ESP side through `/api/test`.
 
 ## Data Flow / 数据流
 
@@ -79,7 +79,6 @@ English:
 | 5 | LVGL 根据触控切页刷新卡片 | LVGL refreshes cards and pages based on touch navigation |
 | 6 | 浏览器访问 ESP Web 后台修改连接配置，配置写入 NVS | Browser changes connection settings through the ESP Web backend, persisted to NVS |
 | 7 | Web 后台的连接测试由 ESP 请求 NAS Agent `/api/v1/health` | The Web backend connection test has the ESP request NAS Agent `/api/v1/health` |
-| 8 | 浏览器可在 1-7 号内置背景之间调整每页映射，配置写入 NVS 并立即刷新 UI | Browser can remap each page across embedded backgrounds 1-7; the mapping is persisted to NVS and refreshes the UI immediately |
 
 ## Reliability Rules / 可靠性规则
 

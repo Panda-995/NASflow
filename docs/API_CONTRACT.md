@@ -191,14 +191,9 @@ English: These endpoints run on the ESP itself at port 80 for browser-based sett
   "api_host": "192.168.101.12",
   "api_port": 8088,
   "poll_interval_ms": 1000,
-  "token_set": false,
-  "backgrounds": [1, 2, 3, 4, 5, 6, 7]
+  "token_set": false
 }
 ```
-
-中文：`backgrounds` 是 7 个页面对应的内置背景编号，取值范围为 1 到 7，顺序为总览、性能、存储、硬盘、网络、服务、后台。
-
-English: `backgrounds` maps the 7 UI pages to embedded background numbers from 1 to 7, ordered as Overview, Performance, Storage, Drives, Network, Services, and Backend.
 
 ### POST /config
 
@@ -206,20 +201,16 @@ English: `backgrounds` maps the 7 UI pages to embedded background numbers from 1
 
 English: HTML form submission for NAS Agent host, port, optional token, and polling interval. An empty token keeps the previous value; the clear checkbox removes it.
 
-### POST /backgrounds
-
-中文：HTML 表单字段为 `bg0` 到 `bg6`，每个字段取值 `1` 到 `7`。保存后写入 NVS，并立即刷新当前 LVGL 页面背景。
-
-English: HTML form fields are `bg0` through `bg6`, each with a value from `1` to `7`. Saving persists the mapping to NVS and refreshes the current LVGL page background immediately.
-
 ## Removed / 已移除
 
 中文：
 
+- **背景设置**：ESP 后台的背景映射功能已移除，所有页面统一使用 `image/1.png` 转换的 1024×534 原生分辨率背景。
 - **环境页面**：ESP 固件已不再渲染环境页（风扇、UPS）。
 - Agent 不再采集 `environment` 字段，`/api/v1/status` 输出中不再包含 `environment` 对象。
 
 English:
 
+- **Background settings**: The ESP Web backend background mapping feature has been removed. All pages share a single 1024×534 native-resolution background converted from `image/1.png`.
 - **Environment page**: The ESP firmware no longer renders an environment page (fans, UPS).
 - The Agent no longer collects the `environment` field — the `environment` object is no longer present in `/api/v1/status` output.
