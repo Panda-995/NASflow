@@ -6,9 +6,9 @@ English: This project builds a NAS telemetry touch display for the Waveshare ESP
 
 ## Current Status / 当前状态
 
-中文：项目已构建通过并烧录到 COM6 的 ESP32-S3-Touch-LCD-5B。固件通过 Wi-Fi 轮询 NAS Docker Agent 的 `/api/v1/status`，以彩色手绘风 7 页触控界面展示 NAS 状态；配置入口改为 ESP 自带 Web 后台，屏幕端只负责展示后台地址和运行状态。Agent 端采用零挂载架构（pid:host + nsenter），无需在极空间上挂载主机卷。
+中文：项目已构建通过并烧录到 COM6 的 ESP32-S3-Touch-LCD-5B。固件通过 Wi-Fi 轮询 NAS Docker Agent 的 `/api/v1/status`，以彩色手绘风 7 页触控界面展示 NAS 状态；每页使用 `image/1.png` 到 `image/7.png` 转换后的内置背景，页面与背景的对应关系可在 ESP Web 后台调整。配置入口改为 ESP 自带 Web 后台，屏幕端只负责展示后台地址和运行状态。Agent 端采用零挂载架构（pid:host + nsenter），无需在极空间上挂载主机卷。
 
-English: The project builds successfully and has been flashed to the ESP32-S3-Touch-LCD-5B on COM6. The firmware polls the NAS Docker Agent `/api/v1/status` over Wi-Fi and renders a colorful hand-drawn 7-page touch UI. Settings are handled by the ESP-hosted Web backend; the screen only shows the backend URL and runtime state. The Agent uses a zero-mount architecture (pid:host + nsenter), requiring no host volume mounts on ZSpace.
+English: The project builds successfully and has been flashed to the ESP32-S3-Touch-LCD-5B on COM6. The firmware polls the NAS Docker Agent `/api/v1/status` over Wi-Fi and renders a colorful hand-drawn 7-page touch UI. Each page uses an embedded background converted from `image/1.png` through `image/7.png`, and the page-to-background mapping can be changed in the ESP Web backend. Settings are handled by the ESP-hosted Web backend; the screen only shows the backend URL and runtime state. The Agent uses a zero-mount architecture (pid:host + nsenter), requiring no host volume mounts on ZSpace.
 
 ## Target Hardware / 目标硬件
 
@@ -37,7 +37,8 @@ ESP32-S3-Touch-LCD-5B
   HTTP polling (configurable 1-60 second interval)
   Left/right swipe page navigation (7 pages)
   Header page dots for visual page position
-  ESP Web backend on port 80 for host/domain, port, token, and polling interval
+  Embedded 1-7 page backgrounds with Web-configurable page mapping
+  ESP Web backend on port 80 for host/domain, port, token, polling interval, and page backgrounds
   Colorful hand-drawn desktop ornament dashboard
 
 NAS Docker Agent
@@ -80,7 +81,7 @@ NAS Docker Agent
 1. 在 NAS 上使用 `agent/docker-compose.example.yml` 部署 Agent（零挂载架构，默认端口 `8088`，无需 token）。
 2. 在 `firmware` 中运行 `idf.py menuconfig`，填写 Wi-Fi SSID 和密码。
 3. 构建并烧录：`idf.py -p COM6 build flash`。
-4. 设备连上 Wi-Fi 后，在屏幕“后台”页查看 ESP 地址，打开 `http://{ESP_IP}/` 配置 NAS 主机名/IP、端口、可选 token 和轮询间隔，也可以用“测试连接”检查 NAS Agent 健康接口。
+4. 设备连上 Wi-Fi 后，在屏幕“后台”页查看 ESP 地址，打开 `http://{ESP_IP}/` 配置 NAS 主机名/IP、端口、可选 token、轮询间隔和每页背景，也可以用“测试连接”检查 NAS Agent 健康接口。
 5. 设备会轮询 `http://{NAS_IP}:8088/api/v1/status` 并用左右滑动分页显示。
 
 English:
@@ -88,7 +89,7 @@ English:
 1. Deploy `agent/docker-compose.example.yml` on the NAS (zero-mount architecture, default port `8088`, no token required).
 2. Run `idf.py menuconfig` in `firmware` and set Wi-Fi SSID and password.
 3. Build and flash with `idf.py -p COM6 build flash`.
-4. After Wi-Fi connects, read the ESP address from the screen's Backend page and open `http://{ESP_IP}/` to configure the NAS hostname/IP, port, optional token, and polling interval. The Connection Test checks the NAS Agent health endpoint from the ESP itself.
+4. After Wi-Fi connects, read the ESP address from the screen's Backend page and open `http://{ESP_IP}/` to configure the NAS hostname/IP, port, optional token, polling interval, and page backgrounds. The Connection Test checks the NAS Agent health endpoint from the ESP itself.
 5. The device polls `http://{NAS_IP}:8088/api/v1/status` and presents metrics across swipeable pages.
 
 ## Safety Boundary / 安全边界

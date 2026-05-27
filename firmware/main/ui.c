@@ -6,6 +6,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "backgrounds/page_backgrounds.h"
 #include "board_5b.h"
 #include "lvgl.h"
 #include "sdkconfig.h"
@@ -326,6 +327,26 @@ static void draw_background_marks(lv_color_t accent)
     mark(s_content, 930, 468, 64, 7, accent, LV_OPA_30);
     mark(s_content, 44, 494, 86, 7, lv_color_hex(0x36AA69), LV_OPA_30);
     mark(s_content, 982, 120, 9, 120, accent, LV_OPA_20);
+}
+
+static void draw_page_background(void)
+{
+    lv_obj_set_style_bg_color(s_content, PAGE_THEME[s_page].bg, 0);
+
+    lv_obj_t *img = lv_img_create(s_content);
+    lv_img_set_src(img, &bg_page_1);
+    lv_obj_set_pos(img, 0, -1);
+    lv_obj_clear_flag(img, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(img, LV_OBJ_FLAG_GESTURE_BUBBLE);
+
+    lv_obj_t *wash = lv_obj_create(s_content);
+    lv_obj_remove_style_all(wash);
+    lv_obj_set_pos(wash, 0, 0);
+    lv_obj_set_size(wash, SCREEN_W, CONTENT_H);
+    lv_obj_set_style_bg_color(wash, PAGE_THEME[s_page].bg, 0);
+    lv_obj_set_style_bg_opa(wash, LV_OPA_40, 0);
+    lv_obj_clear_flag(wash, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(wash, LV_OBJ_FLAG_GESTURE_BUBBLE);
 }
 
 static void chip(lv_obj_t *parent, const char *text, lv_color_t color, int x, int y, int w)
@@ -656,7 +677,7 @@ static void clear_content(void)
 static void draw_page(void)
 {
     clear_content();
-    lv_obj_set_style_bg_color(s_content, PAGE_THEME[s_page].bg, 0);
+    draw_page_background();
     draw_background_marks(PAGE_THEME[s_page].accent);
 
     if (!s_has_status && s_page != PAGE_SETTINGS) {
@@ -749,7 +770,7 @@ static void init_styles(void)
     lv_style_set_pad_all(&s_style_header, 0);
 
     lv_style_init(&s_style_card);
-    lv_style_set_bg_opa(&s_style_card, LV_OPA_COVER);
+    lv_style_set_bg_opa(&s_style_card, LV_OPA_90);
     lv_style_set_radius(&s_style_card, 8);
     lv_style_set_border_width(&s_style_card, 3);
     lv_style_set_pad_all(&s_style_card, 0);

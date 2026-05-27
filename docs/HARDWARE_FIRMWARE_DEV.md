@@ -14,7 +14,7 @@ English: This document describes firmware development, configuration, build, fla
 - 使用 CH422G 控制触控复位和背光。
 - 通过 Wi-Fi 轮询 NAS Docker Agent。
 - 支持触控左右滑动切页（7 页），Header 页码圆点指示器。
-- 屏幕“后台”页显示 ESP Web 后台地址，NAS Agent 地址和端口在浏览器后台配置。
+- 屏幕“后台”页显示 ESP Web 后台地址，NAS Agent 地址、端口和页面背景在浏览器后台配置。
 
 English:
 
@@ -24,7 +24,7 @@ English:
 - Use CH422G for touch reset and backlight control.
 - Poll the NAS Docker Agent over Wi-Fi.
 - Support left/right touch swipe page navigation (7 pages) with header page dots.
-- The screen's Backend page shows the ESP Web backend URL; NAS Agent address and port are configured in the browser backend.
+- The screen's Backend page shows the ESP Web backend URL; NAS Agent address, port, and page backgrounds are configured in the browser backend.
 
 ## Board Signals / 板级信号
 
@@ -56,6 +56,7 @@ References / 参考资料：
 | --- | --- | --- |
 | `app_main.c` | 启动入口，初始化板级、Wi-Fi、UI、Web 后台、轮询任务 | startup entry, initializes board, Wi-Fi, UI, Web backend, polling task |
 | `board_5b.c` | LCD、触控、背光、LVGL tick 和 flush | LCD, touch, backlight, LVGL tick and flush |
+| `backgrounds/` | 由 `image/1.png` 到 `image/7.png` 生成的内置 RGB565 背景 | embedded RGB565 backgrounds generated from `image/1.png` through `image/7.png` |
 | `wifi_manager.c` | Wi-Fi STA 连接管理 | Wi-Fi station connection management |
 | `api_client.c` | HTTP GET `/api/v1/status` | HTTP GET `/api/v1/status` |
 | `web_server.c` | ESP 端配置后台，支持页面、配置 API、连接测试、重启 | ESP-side settings backend with page, config API, connection test, restart |
@@ -66,9 +67,9 @@ References / 参考资料：
 
 ## UI Design / 界面设计
 
-中文：界面采用彩色手绘风桌面摆件设计，基于设计文档 `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` 和本轮 UI/UX 梳理。共 7 页，Header 带页码圆点指示器，左右滑动切页。设计重点是降低单页信息密度、突出关键数值、用色块和纸片感卡片建立摆件属性。配置不再塞进屏幕虚拟键盘，而是放到 ESP Web 后台。
+中文：界面采用彩色手绘风桌面摆件设计，基于设计文档 `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` 和本轮 UI/UX 梳理。共 7 页，Header 带页码圆点指示器，左右滑动切页。设计重点是降低单页信息密度、突出关键数值、用色块和纸片感卡片建立摆件属性。每页背景来自 `image/1.png` 到 `image/7.png` 的内置资源，Web 后台可调整页面与背景的映射。配置不再塞进屏幕虚拟键盘，而是放到 ESP Web 后台。
 
-English: The UI uses a colorful hand-drawn desktop-ornament design based on `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` and this round of UI/UX review. It has 7 pages with header page dots and swipe navigation. The design reduces per-page density, prioritizes key values, and uses colored rails plus paper-like cards to improve the ornament feel. Configuration is no longer squeezed into an on-screen keyboard; it lives in the ESP Web backend.
+English: The UI uses a colorful hand-drawn desktop-ornament design based on `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` and this round of UI/UX review. It has 7 pages with header page dots and swipe navigation. The design reduces per-page density, prioritizes key values, and uses colored rails plus paper-like cards to improve the ornament feel. Each page background comes from the embedded assets generated from `image/1.png` through `image/7.png`, and the Web backend can remap backgrounds per page. Configuration is no longer squeezed into an on-screen keyboard; it lives in the ESP Web backend.
 
 | Page | 中文 | English |
 | --- | --- | --- |
@@ -89,6 +90,7 @@ English: The UI uses a colorful hand-drawn desktop-ornament design based on `doc
 - 存储页：主卡显示所有存储池合计，避免用户误读单池容量为总容量。
 - 网络页：网口卡直接显示 IP，已接入数量放在顶部摘要。
 - 服务页：只展示 Docker，并加入容器列表，备份/快照不再混入。
+- 背景系统：图片作为桌面摆件的情绪层，数据卡片保持半透明纸片感，保证可读性。
 
 English:
 
@@ -97,6 +99,7 @@ English:
 - Storage page: the primary card shows combined totals across all pools to avoid mistaking one pool for total capacity.
 - Network page: interface cards show IP addresses directly, with connected count in the top summary.
 - Services page: Docker only, with a container list; backup/snapshot data is no longer mixed in.
+- Background system: images provide the ornament-like visual layer, while semi-opaque paper cards preserve readability.
 
 ### Color System / 配色
 
@@ -121,9 +124,9 @@ idf.py menuconfig
 idf.py build
 ```
 
-中文：当前构建已通过，二进制体积约 `0x1304f0`，自定义 6MB factory app 分区还有约 80% 余量。
+中文：当前构建已通过，二进制体积约 `0x1a64a0`，自定义 6MB factory app 分区还有约 73% 余量。
 
-English: The current build passes. The app binary is about `0x1304f0`, leaving about 80% free in the custom 6MB factory app partition.
+English: The current build passes. The app binary is about `0x1a64a0`, leaving about 73% free in the custom 6MB factory app partition.
 
 ## Flash Steps / 烧录步骤
 
@@ -147,7 +150,7 @@ English: Flashing must be performed from the PC connected to the ESP. Wi-Fi SSID
 - 按配置的轮询间隔请求 `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status`。
 - 解析成功后刷新当前页面。
 - 请求失败时显示离线或连接错误状态。
-- Web 后台可保存 IP/域名、端口、可选 token、轮询间隔到 NVS，并通过 `/api/test` 测试 NAS Agent 健康接口。
+- Web 后台可保存 IP/域名、端口、可选 token、轮询间隔、页面背景映射到 NVS，并通过 `/api/test` 测试 NAS Agent 健康接口。
 - 左右滑动切页，Header 圆点指示当前位置。
 
 English:
@@ -158,7 +161,7 @@ English:
 - Request `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status` at the configured polling interval.
 - Refresh the current page after a successful parse.
 - Show offline or connection error state on request failure.
-- The Web backend saves IP/hostname, port, optional token, and polling interval to NVS, and tests the NAS Agent health endpoint through `/api/test`.
+- The Web backend saves IP/hostname, port, optional token, polling interval, and page-background mapping to NVS, and tests the NAS Agent health endpoint through `/api/test`.
 - Swipe left/right to change pages, header dots indicate current position.
 
 ## Next Firmware Improvements / 后续固件增强
@@ -169,6 +172,7 @@ English:
 - 增加亮度滑杆和息屏策略。
 - 增加 OTA 更新。
 - 网络页加入折线图趋势展示。
+- 如需真正上传自定义背景图，可新增文件系统分区和 PNG/JPEG 解码器。
 
 English:
 
@@ -176,3 +180,4 @@ English:
 - Add brightness control and screen sleep policy.
 - Add OTA update.
 - Add line chart trend display on the Network page.
+- To support true custom background uploads, add a filesystem partition plus a PNG/JPEG decoder.

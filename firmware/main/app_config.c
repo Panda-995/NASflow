@@ -1,5 +1,6 @@
 #include "app_config.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "esp_log.h"
@@ -93,6 +94,36 @@ esp_err_t app_config_save_api(const char *host, int port, const char *token, uin
     }
     if (err == ESP_OK && poll_interval_ms != 0) {
         err = nvs_set_u32(nvs, KEY_POLL_MS, poll_interval_ms);
+    }
+    if (err == ESP_OK) {
+        err = nvs_commit(nvs);
+    }
+    nvs_close(nvs);
+    return err;
+}
+
+esp_err_t app_config_save_all(const app_config_t *config)
+{
+    if (config == NULL || config->api_host[0] == '\0' || config->api_port <= 0 || config->api_port > 65535 ||
+        config->poll_interval_ms < 1000 || config->poll_interval_ms > 60000) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    nvs_handle_t nvs;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = nvs_set_str(nvs, KEY_API_HOST, config->api_host);
+    if (err == ESP_OK) {
+        err = nvs_set_i32(nvs, KEY_API_PORT, config->api_port);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_str(nvs, KEY_API_TOKEN, config->api_token);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u32(nvs, KEY_POLL_MS, config->poll_interval_ms);
     }
     if (err == ESP_OK) {
         err = nvs_commit(nvs);

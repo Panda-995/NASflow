@@ -178,6 +178,40 @@ English: Main firmware polling endpoint. The recommended interval is 1 second; S
 | 服务 | `workloads.docker`（运行/停止/异常统计 + `containers[]` 容器列表） |
 | 后台 | ESP 本地配置状态，不依赖 NAS API；Web 后台通过 `GET /api/config` 暴露脱敏配置，通过 `GET /api/test` 测试 NAS Agent 健康接口 |
 
+## ESP Local Web API / ESP 本地后台接口
+
+中文：这些接口运行在 ESP 自己的 80 端口，用于浏览器后台配置；它们不是 NAS Docker Agent 的接口。
+
+English: These endpoints run on the ESP itself at port 80 for browser-based settings. They are not NAS Docker Agent endpoints.
+
+### GET /api/config
+
+```json
+{
+  "api_host": "192.168.101.12",
+  "api_port": 8088,
+  "poll_interval_ms": 1000,
+  "token_set": false,
+  "backgrounds": [1, 2, 3, 4, 5, 6, 7]
+}
+```
+
+中文：`backgrounds` 是 7 个页面对应的内置背景编号，取值范围为 1 到 7，顺序为总览、性能、存储、硬盘、网络、服务、后台。
+
+English: `backgrounds` maps the 7 UI pages to embedded background numbers from 1 to 7, ordered as Overview, Performance, Storage, Drives, Network, Services, and Backend.
+
+### POST /config
+
+中文：HTML 表单提交 NAS Agent 主机、端口、可选 token 和轮询间隔。token 留空表示保留原值，勾选清空才会删除。
+
+English: HTML form submission for NAS Agent host, port, optional token, and polling interval. An empty token keeps the previous value; the clear checkbox removes it.
+
+### POST /backgrounds
+
+中文：HTML 表单字段为 `bg0` 到 `bg6`，每个字段取值 `1` 到 `7`。保存后写入 NVS，并立即刷新当前 LVGL 页面背景。
+
+English: HTML form fields are `bg0` through `bg6`, each with a value from `1` to `7`. Saving persists the mapping to NVS and refreshes the current LVGL page background immediately.
+
 ## Removed / 已移除
 
 中文：

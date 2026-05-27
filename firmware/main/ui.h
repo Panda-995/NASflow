@@ -2,6 +2,10 @@
 
 #include "nas_status.h"
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 typedef bool (*ui_endpoint_save_cb_t)(const char *host, int port, void *user_data);
 
 void ui_init(void);

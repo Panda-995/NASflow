@@ -154,15 +154,15 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     html_escape(s_config->api_host, host, sizeof(host));
     const bool has_token = s_config->api_token[0] != '\0';
 
-    char *html = calloc(1, 14000);
+    char *html = calloc(1, 20000);
     if (html == NULL) {
         return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "no memory");
     }
 
-    snprintf(html, 14000,
+    snprintf(html, 20000,
              "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\">"
              "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-             "<title>NAS Display 后台</title>"
+             "<title>NASflow 后台</title>"
              "<style>"
              ":root{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans SC','Microsoft YaHei',sans-serif;color:#1f2b2a;background:#f4ecdf}"
              "*{box-sizing:border-box}body{margin:0;background:#f4ecdf;min-height:100vh}"
@@ -171,10 +171,11 @@ static esp_err_t root_get_handler(httpd_req_t *req)
              ".wrap{max-width:1060px;margin:0 auto;padding:28px 18px 52px}.hero,.card{border:2px solid #22302e;border-radius:8px;background:#fffdf7;box-shadow:6px 7px 0 #d9caba}"
              ".hero{padding:26px;margin-bottom:18px;position:relative;overflow:hidden}.hero:before{content:'';position:absolute;left:24px;top:-4px;width:84px;height:10px;background:#4c96d7;border-radius:4px}"
              "h1{margin:0;font-size:30px;line-height:1.2;letter-spacing:0}h2{margin:0 0 14px;font-size:20px}.sub{color:#586966;margin-top:10px;line-height:1.7;max-width:760px}"
-             ".grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.stack{display:grid;gap:18px}.card{padding:20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}"
+             ".grid{display:grid;grid-template-columns:1.08fr .92fr;gap:18px}.stack{display:grid;gap:18px;align-content:start}.card{padding:20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}"
              ".stat{border:2px solid #22302e;border-radius:8px;background:#f2fbff;padding:12px}.stat b{display:block;font-size:19px}.stat span{display:block;color:#66736f;font-size:13px;margin-top:4px}"
              "label{display:block;font-weight:800;margin:14px 0 7px}.hint{font-size:13px;color:#6b7774;margin-top:8px;line-height:1.6}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}"
-             "input{width:100%%;border:2px solid #1f2b2a;border-radius:8px;padding:13px 14px;font-size:16px;background:#fff}"
+             "input,select{width:100%%;border:2px solid #1f2b2a;border-radius:8px;padding:13px 14px;font-size:16px;background:#fff;color:#1f2b2a}"
+             "select{appearance:none;background:linear-gradient(90deg,#fff 0,#fff 70%%,#fff8dd 70%%);font-weight:800}"
              ".row{display:grid;grid-template-columns:2fr 1fr;gap:12px}.btn{border:2px solid #1f2b2a;border-radius:8px;background:#4c96d7;color:white;font-weight:800;font-size:15px;padding:13px 16px;box-shadow:4px 5px 0 #b9c9d9;cursor:pointer}"
              ".btn.secondary{background:#36aa69;box-shadow:4px 5px 0 #b8d4bf}.btn.ghost{background:#fff;color:#1f2b2a;box-shadow:none}.btn.danger{background:#e85d62;box-shadow:4px 5px 0 #dfb7b8}"
              ".pill{display:inline-block;border:2px solid #1f2b2a;border-radius:8px;background:#e9f7ee;padding:8px 12px;margin:8px 8px 0 0;font-weight:800}.pill.warn{background:#fff1cf}.pill.info{background:#eef4ff}"
@@ -182,9 +183,9 @@ static esp_err_t root_get_handler(httpd_req_t *req)
              ".result{border:2px dashed #22302e;border-radius:8px;background:#f6fbff;padding:12px;margin-top:14px;min-height:46px;color:#43514e}.api{display:grid;gap:8px}.api a{color:#1b6aa6;font-weight:800;text-decoration:none}"
              "@media(max-width:780px){.grid,.row,.stats{grid-template-columns:1fr}.hero{padding:22px}h1{font-size:26px}}"
              "</style></head><body><main class=\"wrap\">"
-             "<section class=\"hero\"><h1>NAS Display 控制台</h1><div class=\"sub\">屏幕负责漂亮展示，复杂输入和运维动作放在这里。保存后 ESP 会立即切换到新的 NAS Agent 地址。</div>"
+             "<section class=\"hero\"><h1>NASflow 控制台</h1><div class=\"sub\">屏幕负责漂亮展示，复杂输入和运维动作放在这里。保存后 ESP 会立即切换到新的 NAS Agent 地址。</div>"
              "<div class=\"stats\"><div class=\"stat\"><b class=\"mono\">%s:%d</b><span>当前目标</span></div><div class=\"stat\"><b>%lu ms</b><span>轮询间隔</span></div><div class=\"stat\"><b>%s</b><span>Token</span></div><div class=\"stat\"><b id=\"selfHost\">--</b><span>ESP 后台</span></div></div></section>"
-             "<section class=\"grid\"><form class=\"card\" method=\"post\" action=\"/config\"><h2>连接设置</h2>"
+             "<section class=\"grid\"><div class=\"stack\"><form class=\"card\" method=\"post\" action=\"/config\"><h2>连接设置</h2>"
              "<label>NAS Agent 主机地址</label><input name=\"host\" value=\"%s\" maxlength=\"63\" placeholder=\"192.168.101.12 或 nas.local\" required>"
              "<div class=\"row\"><div><label>端口</label><input name=\"port\" type=\"number\" min=\"1\" max=\"65535\" value=\"%d\" required></div>"
              "<div><label>刷新间隔 ms</label><input id=\"poll\" name=\"poll\" type=\"number\" min=\"1000\" max=\"60000\" step=\"500\" value=\"%lu\" required></div></div>"
@@ -192,7 +193,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
              "<label>API Token</label><input name=\"token\" type=\"password\" maxlength=\"95\" placeholder=\"%s\">"
              "<label><input name=\"clear_token\" type=\"checkbox\" value=\"1\" style=\"width:auto\"> 清空 Token</label>"
              "<div class=\"hint\">Token 留空表示保持不变；如需删除 Token，勾选清空。</div>"
-             "<div class=\"actions\"><button class=\"btn\" type=\"submit\">保存设置</button></div></form>"
+             "<div class=\"actions\"><button class=\"btn\" type=\"submit\">保存设置</button></div></form></div>"
              "<div class=\"stack\"><section class=\"card\"><h2>连接诊断</h2><p class=\"hint\">由 ESP 直接请求 NAS Agent 的健康接口，最接近屏幕实际连通性。</p>"
              "<div class=\"actions\"><button class=\"btn secondary\" type=\"button\" onclick=\"testConn()\">测试连接</button><a class=\"btn ghost\" id=\"healthLink\" target=\"_blank\" href=\"#\">打开健康接口</a></div>"
              "<div id=\"testResult\" class=\"result\">尚未测试</div></section>"

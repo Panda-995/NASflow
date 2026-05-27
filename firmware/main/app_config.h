@@ -2,6 +2,7 @@
 
 #include "esp_err.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct {
@@ -16,3 +17,4 @@ typedef struct {
 void app_config_load(app_config_t *config);
 esp_err_t app_config_save_endpoint(const char *host, int port);
 esp_err_t app_config_save_api(const char *host, int port, const char *token, uint32_t poll_interval_ms);
+esp_err_t app_config_save_all(const app_config_t *config);

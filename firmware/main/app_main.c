@@ -68,7 +68,7 @@ static bool endpoint_save_cb(const char *host, int port, void *user_data)
 static bool web_config_update_cb(const app_config_t *config, void *user_data)
 {
     (void)user_data;
-    esp_err_t err = app_config_save_api(config->api_host, config->api_port, config->api_token, config->poll_interval_ms);
+    esp_err_t err = app_config_save_all(config);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to save web config: %s", esp_err_to_name(err));
         return false;
