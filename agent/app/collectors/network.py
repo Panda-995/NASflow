@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..settings import settings
-from ..utils import host_path, read_text, run_json, stable_hash
+from ..utils import host_path, read_text, run_command, run_json, stable_hash
 
 _previous: dict[str, tuple[float, int, int]] = {}
 
@@ -27,7 +27,17 @@ def _ip_map() -> dict[str, list[str]]:
     return result
 
 
-def _netdev() -> list[dict[str, Any]]:
+def _is_physical(name: str) -> bool:
+    if not name.startswith(("eth", "en", "wl")):
+        return False
+    device_path = str(Path(settings.host_sys) / "class/net" / name / "device")
+    code, _, _ = run_command(["nsenter", "-t", "1", "-m", "test", "-d", device_path], timeout=2)
+    if code == 0:
+        return True
+    return Path(device_path).exists()
+
+
+def _netdev() -> tuple[list[dict[str, Any]], int, int]:
     now = time.time()
     lines = read_text(host_path(settings.host_proc, "net/dev")).splitlines()[2:]
     ips = _ip_map()
@@ -40,6 +50,8 @@ def _netdev() -> list[dict[str, Any]]:
         name, payload = line.split(":", 1)
         name = name.strip()
         if name == "lo":
+            continue
+        if not _is_physical(name):
             continue
         values = payload.split()
         if len(values) < 16:
@@ -87,15 +99,10 @@ def _netdev() -> list[dict[str, Any]]:
 
 def collect() -> dict[str, Any]:
     interfaces, total_rx, total_tx = _netdev()
-    physical = [
-        item
-        for item in interfaces
-        if item["name"].startswith(("eth", "en", "wl")) or item["link_speed_mbps"] in {1000, 2500, 10000}
-    ]
     return {
         "total_rx_bps": total_rx,
         "total_tx_bps": total_tx,
-        "interfaces": (physical or interfaces)[:8],
+        "interfaces": interfaces[:8],
         "health": "ok",
     }
 

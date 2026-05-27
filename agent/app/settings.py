@@ -33,11 +33,11 @@ class Settings:
     enable_nvme: bool = _env_bool("NAS_AGENT_ENABLE_NVME", True)
     enable_docker: bool = _env_bool("NAS_AGENT_ENABLE_DOCKER", True)
     enable_ups: bool = _env_bool("NAS_AGENT_ENABLE_UPS", False)
-    smart_interval_sec: int = _env_int("NAS_AGENT_SMART_INTERVAL_SEC", 300)
-    nvme_interval_sec: int = _env_int("NAS_AGENT_NVME_INTERVAL_SEC", 60)
+    smart_interval_sec: int = _env_int("NAS_AGENT_SMART_INTERVAL_SEC", 120)
+    nvme_interval_sec: int = _env_int("NAS_AGENT_NVME_INTERVAL_SEC", 30)
     docker_interval_sec: int = _env_int("NAS_AGENT_DOCKER_INTERVAL_SEC", 10)
-    storage_interval_sec: int = _env_int("NAS_AGENT_STORAGE_INTERVAL_SEC", 30)
-    polling_interval_ms: int = _env_int("NAS_AGENT_POLLING_INTERVAL_MS", 5000)
+    storage_interval_sec: int = _env_int("NAS_AGENT_STORAGE_INTERVAL_SEC", 15)
+    polling_interval_ms: int = _env_int("NAS_AGENT_POLLING_INTERVAL_MS", 2000)
     privacy_salt: str = os.getenv("NAS_AGENT_PRIVACY_SALT", "nas-monitor-agent")
 
 

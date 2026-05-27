@@ -6,6 +6,10 @@ from typing import Any
 from ..settings import settings
 from ..utils import host_path, read_text, run_command
 
+_SYSTEM_TYPES = {"tmpfs", "efivarfs", "devtmpfs", "proc", "sysfs", "overlay", "vfat"}
+_SYSTEM_PREFIXES = ("/boot", "/run", "/sys", "/proc", "/dev", "/tmp", "/var")
+_SYSTEM_ZSPACE = {"/zspace/zsrp", "/zspace/applications/logs", "/zspace/extdev"}
+
 
 def _df_entries() -> list[dict[str, Any]]:
     args = ["nsenter", "-t", "1", "-m", "df", "-B1", "-T"]
@@ -20,7 +24,15 @@ def _df_entries() -> list[dict[str, Any]]:
         if len(parts) < 7:
             continue
         filesystem, fstype, total, used, free, used_pct, mount = parts[:7]
-        if not mount.startswith(("/data", "/zspace", "/mnt", "/volume")):
+        if fstype in _SYSTEM_TYPES:
+            continue
+        if mount.startswith(_SYSTEM_PREFIXES):
+            continue
+        if mount in _SYSTEM_ZSPACE:
+            continue
+        if not mount.startswith("/data"):
+            continue
+        if "/zdocker" in mount or "/overlay2" in mount:
             continue
         try:
             total_i = int(total)
@@ -65,24 +77,26 @@ def collect() -> dict[str, Any]:
     pools: list[dict[str, Any]] = []
     volumes: list[dict[str, Any]] = []
     for idx, entry in enumerate(entries, start=1):
-        volume_id = entry["mount"].strip("/").replace("/", "_") or f"volume{idx}"
-        volume = {
-            "id": volume_id,
-            "name": entry["mount"],
-            "pool_id": volume_id,
-            "filesystem": entry["fstype"],
-            "total_bytes": entry["total_bytes"],
-            "used_bytes": entry["used_bytes"],
-            "free_bytes": entry["free_bytes"],
-            "used_pct": entry["used_pct"],
-            "health": "ok",
-        }
-        volumes.append(volume)
-        if entry["mount"].startswith("/data"):
+        mount = entry["mount"]
+        volume_id = mount.strip("/").replace("/", "_") or f"volume{idx}"
+        volumes.append(
+            {
+                "id": volume_id,
+                "name": mount,
+                "pool_id": volume_id,
+                "filesystem": entry["fstype"],
+                "total_bytes": entry["total_bytes"],
+                "used_bytes": entry["used_bytes"],
+                "free_bytes": entry["free_bytes"],
+                "used_pct": entry["used_pct"],
+                "health": "ok",
+            }
+        )
+        if mount.startswith("/data_"):
             pools.append(
                 {
                     "id": volume_id,
-                    "name": entry["mount"],
+                    "name": mount,
                     "raid_type": "mdraid/btrfs" if "Raid Level" in mdadm_text else "btrfs",
                     "raid_status": raid_status,
                     "health": raid_health,
