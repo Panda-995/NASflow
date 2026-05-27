@@ -11,6 +11,7 @@ idf_component_register(
         "web_server.c"
         "wifi_manager.c"
     INCLUDE_DIRS "."
+    EMBED_FILES bg_page_1.bin
     REQUIRES
         esp_event
         esp_http_client

@@ -335,7 +335,6 @@ static void draw_page_background(void)
 
     lv_obj_t *img = lv_img_create(s_content);
     lv_img_set_src(img, &bg_page_1);
-    lv_img_set_zoom(img, 1024);
     lv_obj_set_pos(img, 0, -1);
     lv_obj_clear_flag(img, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(img, LV_OBJ_FLAG_GESTURE_BUBBLE);
