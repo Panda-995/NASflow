@@ -345,7 +345,7 @@ static void draw_page_background(void)
     lv_obj_set_pos(wash, 0, 0);
     lv_obj_set_size(wash, SCREEN_W, CONTENT_H);
     lv_obj_set_style_bg_color(wash, PAGE_THEME[s_page].bg, 0);
-    lv_obj_set_style_bg_opa(wash, LV_OPA_40, 0);
+    lv_obj_set_style_bg_opa(wash, LV_OPA_10, 0);
     lv_obj_clear_flag(wash, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(wash, LV_OBJ_FLAG_GESTURE_BUBBLE);
 }
