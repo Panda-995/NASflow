@@ -11,11 +11,29 @@ from typing import Any
 from .settings import settings
 
 
+def _nsenter_cat(path: str, timeout: float = 3.0) -> str:
+    code, stdout, _ = run_command(
+        ["nsenter", "-t", "1", "-m", "cat", path], timeout=timeout
+    )
+    return stdout if code == 0 else ""
+
+
+def _nsenter_ls(path: str, timeout: float = 3.0) -> list[str]:
+    code, stdout, _ = run_command(
+        ["nsenter", "-t", "1", "-m", "ls", "-1", path], timeout=timeout
+    )
+    if code != 0:
+        return []
+    return [name for name in stdout.splitlines() if name.strip()]
+
+
 def read_text(path: str | Path, default: str = "") -> str:
+    path_str = str(path)
     try:
-        return Path(path).read_text(encoding="utf-8", errors="replace").strip()
+        return Path(path_str).read_text(encoding="utf-8", errors="replace").strip()
     except OSError:
-        return default
+        result = _nsenter_cat(path_str)
+        return result if result else default
 
 
 def host_path(base: str, relative: str) -> Path:
@@ -71,6 +89,9 @@ def list_dir(path: Path) -> list[Path]:
     try:
         return sorted(path.iterdir(), key=lambda item: item.name)
     except OSError:
+        names = _nsenter_ls(str(path))
+        if names:
+            return sorted([Path(path) / n for n in names], key=lambda item: item.name)
         return []
 
 

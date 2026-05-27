@@ -4,13 +4,12 @@ services:
     container_name: nas-monitor-agent
     restart: unless-stopped
     network_mode: host
+    pid: host
+    privileged: true
     environment:
       NAS_AGENT_BIND_HOST: "0.0.0.0"
       NAS_AGENT_PORT: "8088"
       NAS_AGENT_TOKEN: "change-me"
-      NAS_AGENT_HOST_PROC: "/host/proc"
-      NAS_AGENT_HOST_SYS: "/host/sys"
-      NAS_AGENT_HOST_ETC: "/host/etc"
       NAS_AGENT_ENABLE_SMART: "true"
       NAS_AGENT_ENABLE_NVME: "true"
       NAS_AGENT_ENABLE_DOCKER: "true"
@@ -21,9 +20,4 @@ services:
       NAS_AGENT_DOCKER_INTERVAL_SEC: "10"
       NAS_AGENT_STORAGE_INTERVAL_SEC: "30"
     volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /etc:/host/etc:ro
-      - /dev:/dev:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    privileged: true

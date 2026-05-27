@@ -8,8 +8,7 @@ from ..utils import host_path, read_text, run_command
 
 
 def _df_entries() -> list[dict[str, Any]]:
-    ns_file = host_path(settings.host_proc, "1/ns/mnt")
-    args = ["nsenter", f"--mount={ns_file}", "df", "-B1", "-T"]
+    args = ["nsenter", "-t", "1", "-m", "df", "-B1", "-T"]
     code, stdout, _ = run_command(args, timeout=4)
     if code != 0:
         code, stdout, _ = run_command(["df", "-B1", "-T"], timeout=4)
