@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI
 from .auth import require_token
 from .status_builder import build_status
 
-app = FastAPI(title="NAS Monitor Agent", version="0.1.0")
+app = FastAPI(title="NASflow Agent", version="0.1.0")
 
 
 @app.get("/api/v1/health")

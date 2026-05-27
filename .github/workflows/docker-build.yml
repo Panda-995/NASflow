@@ -31,6 +31,6 @@ jobs:
       - name: Build Docker image
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER}/esp:latest
+          IMAGE=ghcr.io/${OWNER}/nasflow:latest
           docker build -t $IMAGE ./agent
           docker push $IMAGE

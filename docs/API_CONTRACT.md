@@ -67,7 +67,7 @@ English: Main firmware polling endpoint. The recommended interval is 1 second; S
 ```json
 {
   "schema_version": "1.0",
-  "agent": {"name": "nas-monitor-agent", "version": "0.1.0"},
+  "agent": {"name": "nasflow", "version": "0.1.0"},
   "collected_at": "2026-05-27T12:00:00Z",
   "polling": {"recommended_interval_ms": 1000, "smart_cache_sec": 120},
   "nas": {},
@@ -105,7 +105,7 @@ English: Main firmware polling endpoint. The recommended interval is 1 second; S
 ```json
 {
   "schema_version": "1.0",
-  "agent": {"name": "nas-monitor-agent", "version": "0.1.0"},
+  "agent": {"name": "nasflow", "version": "0.1.0"},
   "collected_at": "2026-05-27T12:00:00Z",
   "polling": {"recommended_interval_ms": 1000, "smart_cache_sec": 120},
   "nas": {

@@ -49,9 +49,9 @@ English: The Agent uses a zero-mount architecture. Only pid:host + privileged:tr
 
 ```yaml
 services:
-  nas-monitor-agent:
-    image: ghcr.io/panda-995/esp:latest
-    container_name: nas-monitor-agent
+  nasflow:
+    image: ghcr.io/panda-995/nasflow:latest
+    container_name: nasflow
     restart: unless-stopped
     network_mode: host
     pid: host

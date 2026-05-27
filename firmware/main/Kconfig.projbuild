@@ -1,4 +1,4 @@
-menu "NAS Touch Display"
+menu "NASflow"
 
 config NAS_DISPLAY_WIFI_SSID
     string "Wi-Fi SSID"

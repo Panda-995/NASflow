@@ -1,4 +1,4 @@
-# ESP32-S3 NAS Touch Display Firmware / ESP32-S3 NAS 触控屏固件
+# NASflow Firmware / NASflow 固件
 
 中文：`firmware/` 是 Waveshare ESP32-S3-Touch-LCD-5B 的 ESP-IDF v6.0.1 + LVGL v8.4 固件。它通过 Wi-Fi 访问 NAS Docker Agent，以彩色手绘风 7 页触控界面显示 NAS 状态。Header 带页码圆点指示器，左右滑动切页；NAS 地址、端口、token 和轮询间隔通过 ESP 自带 Web 后台配置。
 
@@ -23,9 +23,9 @@ idf.py set-target esp32s3
 idf.py build
 ```
 
-中文：当前环境已用 ESP-IDF v6.0.1 构建通过。生成文件在 `build/nas_touch_display.bin`，二进制约 `0x1304f0`（还剩约 80% 空间）。
+中文：当前环境已用 ESP-IDF v6.0.1 构建通过。生成文件在 `build/nasflow.bin`，二进制约 `0x1304f0`（还剩约 80% 空间）。
 
-English: The current environment builds successfully with ESP-IDF v6.0.1. The generated firmware image is `build/nas_touch_display.bin`, approximately `0x1304f0` bytes (~80% free).
+English: The current environment builds successfully with ESP-IDF v6.0.1. The generated firmware image is `build/nasflow.bin`, approximately `0x1304f0` bytes (~80% free).
 
 ## Configuration / 配置
 
@@ -38,7 +38,7 @@ idf.py menuconfig
 Set / 设置：
 
 ```text
-NAS Touch Display
+NASflow
   Wi-Fi SSID
   Wi-Fi password
   NAS API host: 192.168.101.12

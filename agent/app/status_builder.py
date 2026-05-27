@@ -39,7 +39,7 @@ def build_status() -> dict[str, Any]:
     )
     return {
         "schema_version": "1.0",
-        "agent": {"name": "nas-monitor-agent", "version": "0.1.0"},
+        "agent": {"name": "nasflow", "version": "0.1.0"},
         "collected_at": dt.datetime.now(dt.UTC).isoformat().replace("+00:00", "Z"),
         "polling": {
             "recommended_interval_ms": settings.polling_interval_ms,

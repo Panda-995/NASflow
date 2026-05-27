@@ -1,4 +1,4 @@
-# NAS Touch Display / NAS 触控状态屏
+# NASflow / NAS 触控状态屏
 
 中文：这是一个面向 Waveshare ESP32-S3-Touch-LCD-5B 的 NAS 状态屏项目。硬件端使用 ESP-IDF + LVGL，NAS 端使用 Docker Agent 采集只读系统信息，并通过 HTTP JSON API 提供给 ESP32-S3。
 

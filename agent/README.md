@@ -1,8 +1,8 @@
-# NAS Monitor Agent / NAS 监控 Agent
+# NASflow Agent / NASflow 采集端
 
-中文：`agent/` 是部署在极空间 NAS 上的只读 Docker 服务。它通过 nsenter 零挂载架构把 Linux、SMART、RAID、网络和 Docker 状态整理成一个稳定的 JSON API，供 ESP32-S3 状态屏读取。
+中文：`agent/` 是部署在极空间 NAS 上的只读 Docker 服务。它通过 nsenter 零挂载架构把 Linux、SMART、RAID、网络和 Docker 状态整理成一个稳定的 JSON API，供 NASflow 状态屏读取。
 
-English: `agent/` is a read-only Docker service for the ZSpace NAS. It uses a zero-mount nsenter architecture to normalize Linux, SMART, RAID, network, and Docker telemetry into a stable JSON API consumed by the ESP32-S3 display.
+English: `agent/` is a read-only Docker service for the ZSpace NAS. It uses a zero-mount nsenter architecture to normalize Linux, SMART, RAID, network, and Docker telemetry into a stable JSON API consumed by the NASflow display.
 
 ## Endpoints / 接口
 
@@ -35,9 +35,9 @@ Use `docker-compose.example.yml` as the starting point. / 以 `docker-compose.ex
 
 ```yaml
 services:
-  nas-monitor-agent:
-    image: ghcr.io/panda-995/esp:latest
-    container_name: nas-monitor-agent
+  nasflow:
+    image: ghcr.io/panda-995/nasflow:latest
+    container_name: nasflow
     restart: unless-stopped
     network_mode: host
     pid: host

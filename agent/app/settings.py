@@ -37,7 +37,7 @@ class Settings:
     docker_interval_sec: int = _env_int("NAS_AGENT_DOCKER_INTERVAL_SEC", 10)
     storage_interval_sec: int = _env_int("NAS_AGENT_STORAGE_INTERVAL_SEC", 15)
     polling_interval_ms: int = _env_int("NAS_AGENT_POLLING_INTERVAL_MS", 1000)
-    privacy_salt: str = os.getenv("NAS_AGENT_PRIVACY_SALT", "nas-monitor-agent")
+    privacy_salt: str = os.getenv("NAS_AGENT_PRIVACY_SALT", "nasflow")
 
 
 settings = Settings()
