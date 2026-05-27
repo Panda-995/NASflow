@@ -27,6 +27,16 @@ def _ip_map() -> dict[str, list[str]]:
     return result
 
 
+def _ns_iface_read(name: str, attr: str, default: str = "") -> str:
+    path = f"/sys/class/net/{name}/{attr}"
+    code, stdout, _ = run_command(
+        ["nsenter", "-t", "1", "-m", "cat", path], timeout=2
+    )
+    if code == 0:
+        return stdout.strip()
+    return read_text(Path(settings.host_sys) / "class/net" / name / attr, default)
+
+
 def _is_physical(name: str) -> bool:
     if not name.startswith(("eth", "en", "wl")):
         return False
@@ -71,18 +81,23 @@ def _netdev() -> tuple[list[dict[str, Any]], int, int]:
         _previous[name] = (now, rx_bytes, tx_bytes)
         total_rx += rx_bps
         total_tx += tx_bps
-        sys_iface = Path(settings.host_sys) / "class/net" / name
-        speed_raw = read_text(sys_iface / "speed")
-        operstate = read_text(sys_iface / "operstate", "unknown")
-        mac_hash = stable_hash(read_text(sys_iface / "address"))
+        speed_raw = _ns_iface_read(name, "speed")
+        operstate = _ns_iface_read(name, "operstate", "unknown")
+        mac_hash = stable_hash(_ns_iface_read(name, "address"))
         try:
             speed = int(speed_raw)
         except ValueError:
             speed = None
+        if operstate == "up":
+            status = "up"
+        elif operstate == "down":
+            status = "disconnected"
+        else:
+            status = operstate
         interfaces.append(
             {
                 "name": name,
-                "status": "up" if operstate == "up" else operstate or "unknown",
+                "status": status,
                 "ip_addresses": ips.get(name, []),
                 "mac_hash": mac_hash,
                 "link_speed_mbps": speed,

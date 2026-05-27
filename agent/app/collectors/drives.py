@@ -45,15 +45,6 @@ def _attr(table: list[dict[str, Any]], names: set[str]) -> int:
 def _temperature(smart: dict[str, Any] | None, device_name: str = "") -> float | None:
     if not smart:
         return None
-    if device_name.startswith("nvme"):
-        temp = smart.get("temperature", {})
-        if temp.get("current") is not None:
-            return float(temp["current"])
-        nvme_log = smart.get("nvme_smart_health_information_log", {})
-        if nvme_log.get("temperature") is not None:
-            val = float(nvme_log["temperature"])
-            return round(val - 273.15 if val > 200 else val, 1)
-        return None
     temp = smart.get("temperature", {})
     value = temp.get("current")
     if value is not None:
@@ -72,7 +63,9 @@ def _temperature(smart: dict[str, Any] | None, device_name: str = "") -> float |
 def _is_real_disk(name: str, model: str, serial: str, size: int) -> bool:
     if not model and not serial:
         return False
-    if name.startswith(("zram", "dm-", "md", "loop", "bcache", "linear")):
+    if name.startswith(("zram", "dm-", "md", "loop", "bcache", "linear", "nvme")):
+        return False
+    if not name.startswith("sd"):
         return False
     return True
 
@@ -89,67 +82,32 @@ def _build() -> list[dict[str, Any]]:
         size = int(device.get("size") or 0)
         if not _is_real_disk(name, model, serial, size):
             continue
-        tran = (device.get("tran") or "").lower()
         rota = bool(device.get("rota"))
-        is_nvme = name.startswith("nvme")
-        if is_nvme and size < 100 * 1024**3:
-            continue
         smart = _smart(name) if settings.enable_smart else None
-        if is_nvme:
-            smart_json = smart.get("nvme_smart_health_information_log", {}) if smart else {}
-            pct_used = smart_json.get("percentage_used")
-            health = "ok"
-            if pct_used is not None:
-                try:
-                    pct = int(pct_used)
-                    if pct >= 90:
-                        health = "critical"
-                    elif pct >= 70:
-                        health = "warning"
-                except (TypeError, ValueError):
-                    pass
-            drives.append(
-                {
-                    "id": name,
-                    "bay": str(bay),
-                    "type": "ssd",
-                    "model": model,
-                    "serial_hash": stable_hash(serial),
-                    "capacity_bytes": size,
-                    "temperature_c": _temperature(smart, name),
-                    "smart_status": "unknown",
-                    "health": health,
-                    "bad_sector_count": 0,
-                    "power_on_hours": smart_json.get("power_on_hours") if isinstance(smart_json.get("power_on_hours"), int) else None,
-                    "role": "data",
-                    "pool_id": None,
-                }
-            )
-        else:
-            table = smart.get("ata_smart_attributes", {}).get("table", []) if smart else []
-            bad = _attr(table, {"Reallocated_Sector_Ct"}) + _attr(
-                table, {"Current_Pending_Sector", "Offline_Uncorrectable", "Runtime_Bad_Block"}
-            )
-            power_hours = _attr(table, {"Power_On_Hours"})
-            passed = smart.get("smart_status", {}).get("passed") if smart else None
-            health = "ok" if passed is True and bad == 0 else "warning" if passed is not False else "critical"
-            drives.append(
-                {
-                    "id": name,
-                    "bay": str(bay),
-                    "type": "hdd" if rota else "ssd",
-                    "model": model,
-                    "serial_hash": stable_hash(serial),
-                    "capacity_bytes": size,
-                    "temperature_c": _temperature(smart, name),
-                    "smart_status": "passed" if passed is True else "failed" if passed is False else "unknown",
-                    "health": health,
-                    "bad_sector_count": bad,
-                    "power_on_hours": power_hours,
-                    "role": "data",
-                    "pool_id": None,
-                }
-            )
+        table = smart.get("ata_smart_attributes", {}).get("table", []) if smart else []
+        bad = _attr(table, {"Reallocated_Sector_Ct"}) + _attr(
+            table, {"Current_Pending_Sector", "Offline_Uncorrectable", "Runtime_Bad_Block"}
+        )
+        power_hours = _attr(table, {"Power_On_Hours"})
+        passed = smart.get("smart_status", {}).get("passed") if smart else None
+        health = "ok" if passed is True and bad == 0 else "warning" if passed is not False else "critical"
+        drives.append(
+            {
+                "id": name,
+                "bay": str(bay),
+                "type": "hdd" if rota else "ssd",
+                "model": model,
+                "serial_hash": stable_hash(serial),
+                "capacity_bytes": size,
+                "temperature_c": _temperature(smart, name),
+                "smart_status": "passed" if passed is True else "failed" if passed is False else "unknown",
+                "health": health,
+                "bad_sector_count": bad,
+                "power_on_hours": power_hours,
+                "role": "data",
+                "pool_id": None,
+            }
+        )
         bay += 1
     return drives[:24]
 
