@@ -11,7 +11,8 @@ from ..utils import host_path, hostname, parse_key_value_file, read_text, run_js
 
 def _ip_addresses() -> list[str]:
     data = run_json(["ip", "-j", "addr"], timeout=2)
-    ips: list[str] = []
+    ips_v4: list[str] = []
+    ips_v6: list[str] = []
     if isinstance(data, list):
         for item in data:
             if item.get("ifname") == "lo":
@@ -19,9 +20,13 @@ def _ip_addresses() -> list[str]:
             for info in item.get("addr_info", []):
                 local = info.get("local")
                 if local and not local.startswith("127."):
-                    ips.append(local)
-    if ips:
-        return ips
+                    if ":" in local:
+                        ips_v6.append(local)
+                    else:
+                        ips_v4.append(local)
+    result = ips_v4 + ips_v6
+    if result:
+        return result
     try:
         return [socket.gethostbyname(socket.gethostname())]
     except OSError:

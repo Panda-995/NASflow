@@ -19,11 +19,16 @@ def _ip_map() -> dict[str, list[str]]:
         name = iface.get("ifname")
         if not name:
             continue
-        result[name] = [
-            item.get("local")
-            for item in iface.get("addr_info", [])
-            if item.get("local") and not str(item.get("local")).startswith("127.")
-        ]
+        v4: list[str] = []
+        v6: list[str] = []
+        for item in iface.get("addr_info", []):
+            local = item.get("local")
+            if local and not str(local).startswith("127."):
+                if ":" in local:
+                    v6.append(local)
+                else:
+                    v4.append(local)
+        result[name] = v4 + v6
     return result
 
 
