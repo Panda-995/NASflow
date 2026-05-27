@@ -312,11 +312,6 @@ static void clear_content(void)
     }
 }
 
-static const nas_pool_t *first_pool(void)
-{
-    return s_status.storage.pool_count > 0 ? &s_status.storage.pools[0] : NULL;
-}
-
 static void draw_overview(void)
 {
     char value[64];
@@ -339,15 +334,21 @@ static void draw_overview(void)
     add_bar(perf, 18, 190, 190, pct_i(s_status.memory.used_pct), lv_color_hex(0x249F9C));
 
     lv_obj_t *storage = card(s_content, 756, 24, 244, 220, lv_color_hex(0xF2B84B), lv_color_hex(0xFFF8E1), "容量");
-    const nas_pool_t *pool = first_pool();
-    if (pool != NULL) {
+    if (s_status.storage.pool_count > 0) {
+        uint64_t total_sum = 0;
+        uint64_t free_sum = 0;
+        for (int i = 0; i < s_status.storage.pool_count; ++i) {
+            total_sum += s_status.storage.pools[i].total_bytes;
+            free_sum += s_status.storage.pools[i].free_bytes;
+        }
+        float used_pct = total_sum > 0 ? (float)(total_sum - free_sum) / (float)total_sum * 100.0f : 0.0f;
         char total[24];
         char free_b[24];
-        nas_format_bytes(pool->total_bytes, total, sizeof(total));
-        nas_format_bytes(pool->free_bytes, free_b, sizeof(free_b));
-        format_pct(pool->used_pct, value, sizeof(value));
+        nas_format_bytes(total_sum, total, sizeof(total));
+        nas_format_bytes(free_sum, free_b, sizeof(free_b));
+        format_pct(used_pct, value, sizeof(value));
         add_metric(storage, "已用空间", value, 18, 50, 170);
-        add_bar(storage, 18, 106, 184, pct_i(pool->used_pct), lv_color_hex(0xF2B84B));
+        add_bar(storage, 18, 106, 184, pct_i(used_pct), lv_color_hex(0xF2B84B));
         add_metric(storage, "总容量 / 剩余", total, 18, 134, 170);
         label(storage, free_b, lv_color_hex(0x1F2B2A), 18, 182, 170);
     } else {
