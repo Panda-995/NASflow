@@ -46,7 +46,7 @@ def _ups() -> dict[str, Any]:
         return empty
     ups_name = stdout.splitlines()[0].split(":")[0].strip()
     code, stdout, _ = run_command(["upsc", ups_name], timeout=3)
-    if code != 0 or not stdout.strip():
+    if code != 0 or not stdout.strip() or "Error:" in stdout or "Driver not connected" in stdout:
         return empty
     values: dict[str, str] = {}
     for line in stdout.splitlines():

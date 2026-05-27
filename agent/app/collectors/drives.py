@@ -69,6 +69,14 @@ def _temperature(smart: dict[str, Any] | None, device_name: str = "") -> float |
     return None
 
 
+def _is_real_disk(name: str, model: str, serial: str, size: int) -> bool:
+    if not model and not serial:
+        return False
+    if name.startswith(("zram", "dm-", "md", "loop", "bcache", "linear")):
+        return False
+    return True
+
+
 def _build() -> list[dict[str, Any]]:
     drives: list[dict[str, Any]] = []
     bay = 1
@@ -77,10 +85,14 @@ def _build() -> list[dict[str, Any]]:
             continue
         name = device.get("name", "")
         model = (device.get("model") or "").strip()
+        serial = (device.get("serial") or "").strip()
+        size = int(device.get("size") or 0)
+        if not _is_real_disk(name, model, serial, size):
+            continue
         tran = (device.get("tran") or "").lower()
         rota = bool(device.get("rota"))
         is_nvme = name.startswith("nvme")
-        if is_nvme and not model:
+        if is_nvme and size < 100 * 1024**3:
             continue
         smart = _smart(name) if settings.enable_smart else None
         if is_nvme:
@@ -102,8 +114,8 @@ def _build() -> list[dict[str, Any]]:
                     "bay": str(bay),
                     "type": "ssd",
                     "model": model,
-                    "serial_hash": stable_hash(device.get("serial")),
-                    "capacity_bytes": int(device.get("size") or 0),
+                    "serial_hash": stable_hash(serial),
+                    "capacity_bytes": size,
                     "temperature_c": _temperature(smart, name),
                     "smart_status": "unknown",
                     "health": health,
@@ -127,8 +139,8 @@ def _build() -> list[dict[str, Any]]:
                     "bay": str(bay),
                     "type": "hdd" if rota else "ssd",
                     "model": model,
-                    "serial_hash": stable_hash(device.get("serial")),
-                    "capacity_bytes": int(device.get("size") or 0),
+                    "serial_hash": stable_hash(serial),
+                    "capacity_bytes": size,
                     "temperature_c": _temperature(smart, name),
                     "smart_status": "passed" if passed is True else "failed" if passed is False else "unknown",
                     "health": health,

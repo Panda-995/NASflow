@@ -89,6 +89,13 @@ def _build() -> list[dict[str, Any]]:
         name = device.get("name", "")
         if not name.startswith("nvme"):
             continue
+        model = (device.get("model") or "").strip()
+        serial = (device.get("serial") or "").strip()
+        size = int(device.get("size") or 0)
+        if not model and not serial:
+            continue
+        if size < 100 * 1024**3:
+            continue
         smart = _smartctl(name) if settings.enable_nvme else None
         pct_used = _percentage_used(smart)
         temp = _smart_temp(smart)
@@ -103,9 +110,9 @@ def _build() -> list[dict[str, Any]]:
             {
                 "id": name,
                 "slot": f"M2_{slot}",
-                "model": (device.get("model") or "").strip(),
-                "serial_hash": stable_hash(device.get("serial")),
-                "capacity_bytes": int(device.get("size") or 0),
+                "model": model,
+                "serial_hash": stable_hash(serial),
+                "capacity_bytes": size,
                 "used_bytes": None,
                 "temperature_c": temp,
                 "available_spare_pct": _spare(smart),
