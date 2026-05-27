@@ -25,9 +25,5 @@ services:
       - /sys:/host/sys:ro
       - /etc:/host/etc:ro
       - /dev:/dev:ro
-      - /data_s001:/data_s001:ro
-      - /data_s002:/data_s002:ro
-      - /data_n003:/data_n003:ro
-      - /zspace:/zspace:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     privileged: true
