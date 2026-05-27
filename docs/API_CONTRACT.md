@@ -11,7 +11,7 @@ Base URL: http://{NAS_IP}:{PORT}
 Default target: http://192.168.101.12:8088
 ```
 
-Optional auth / 可选鉴权：
+Optional auth / 可选鉴权（默认不启用）：
 
 ```http
 Authorization: Bearer {token}
@@ -58,9 +58,9 @@ English: Used by ESP to quickly check whether the Agent is online.
 
 ## GET /api/v1/status
 
-中文：固件主轮询接口。默认建议 5 秒一次，SMART/NVMe 可由 Agent 内部缓存。
+中文：固件主轮询接口。建议 1 秒一次，SMART/NVMe 可由 Agent 内部缓存。
 
-English: Main firmware polling endpoint. The recommended interval is 5 seconds; SMART/NVMe can be cached inside the Agent.
+English: Main firmware polling endpoint. The recommended interval is 1 second; SMART/NVMe can be cached inside the Agent.
 
 ### Top Level / 顶层结构
 
@@ -69,7 +69,7 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
   "schema_version": "1.0",
   "agent": {"name": "nas-monitor-agent", "version": "0.1.0"},
   "collected_at": "2026-05-27T12:00:00Z",
-  "polling": {"recommended_interval_ms": 5000, "smart_cache_sec": 300},
+  "polling": {"recommended_interval_ms": 1000, "smart_cache_sec": 120},
   "nas": {},
   "cpu": {},
   "memory": {},
@@ -77,7 +77,6 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
   "drives": [],
   "nvme": [],
   "network": {"interfaces": []},
-  "environment": {"fans": [], "ups": {}},
   "workloads": {"docker": {}},
   "data_protection": {"backups": [], "snapshots": []},
   "unavailable": []
@@ -88,20 +87,18 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
 
 | Object | Required for display / 显示所需字段 |
 | --- | --- |
-| `nas` | `hostname`, `primary_ip`, `uptime_sec`, `health`, `alerts[]` |
-| `cpu` | `usage_pct`, `temperature_c`, `core_count`, `load.one`, `load.five`, `load.fifteen`, `health` |
+| `nas` | `hostname`, `primary_ip`, `uptime_sec`, `health`, `alert_count` |
+| `cpu` | `usage_pct`, `temperature_c`, `core_count`, `load_one`, `load_five`, `load_fifteen`, `health` |
 | `memory` | `total_bytes`, `used_bytes`, `available_bytes`, `cache_bytes`, `swap_total_bytes`, `swap_used_bytes`, `used_pct`, `swap_used_pct`, `health` |
 | `storage.pools[]` | `id`, `name`, `raid_type`, `raid_status`, `health`, `total_bytes`, `used_bytes`, `free_bytes`, `used_pct` |
 | `storage.volumes[]` | `id`, `name`, `pool_id`, `filesystem`, `health`, `total_bytes`, `used_bytes`, `free_bytes`, `used_pct` |
 | `drives[]` | `id`, `bay`, `type`, `model`, `smart_status`, `health`, `capacity_bytes`, `temperature_c`, `bad_sector_count`, `power_on_hours` |
 | `nvme[]` | `id`, `slot`, `model`, `cache_state`, `health`, `capacity_bytes`, `used_bytes`, `temperature_c`, `available_spare_pct`, `percentage_used_pct`, `wear_pct` |
 | `network` | `total_rx_bps`, `total_tx_bps`, `interfaces[]`, `health` |
-| `network.interfaces[]` | `name`, `status`, `ip_addresses[]`, `link_speed_mbps`, `rx_bps`, `tx_bps`, `rx_errors`, `tx_errors`, `rx_dropped`, `tx_dropped` |
-| `environment.fans[]` | `name`, `speed_rpm`, `health` |
-| `environment.ups` | `present`, `status`, `battery_pct`, `load_pct`, `runtime_sec`, `health` |
-| `workloads.docker` | `running`, `stopped`, `unhealthy`, `containers[]` |
+| `network.interfaces[]` | `name`, `status`, `ip`, `link_speed_mbps`, `rx_bps`, `tx_bps`, `rx_errors`, `tx_errors`, `rx_dropped`, `tx_dropped` |
+| `workloads.docker` | `running`, `stopped`, `unhealthy`, `container_count`, `containers[]` |
 | `workloads.docker.containers[]` | `name`, `state`, `health` |
-| `data_protection` | `backups[]`, `snapshots[]` |
+| `data_protection` | `backup_count`, `snapshot_count`, `backups[]`, `snapshots[]` |
 
 ### Compact Example / 精简示例
 
@@ -110,19 +107,21 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
   "schema_version": "1.0",
   "agent": {"name": "nas-monitor-agent", "version": "0.1.0"},
   "collected_at": "2026-05-27T12:00:00Z",
-  "polling": {"recommended_interval_ms": 5000, "smart_cache_sec": 300},
+  "polling": {"recommended_interval_ms": 1000, "smart_cache_sec": 120},
   "nas": {
     "hostname": "Z423-8OU2",
     "primary_ip": "192.168.101.12",
     "uptime_sec": 123456,
     "health": "ok",
-    "alerts": []
+    "alert_count": 0
   },
   "cpu": {
     "usage_pct": 23.4,
     "temperature_c": 55.2,
     "core_count": 16,
-    "load": {"one": 0.71, "five": 0.62, "fifteen": 0.58},
+    "load_one": 0.71,
+    "load_five": 0.62,
+    "load_fifteen": 0.58,
     "health": "ok"
   },
   "memory": {
@@ -137,6 +136,8 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
     "health": "ok"
   },
   "storage": {
+    "pool_count": 1,
+    "volume_count": 1,
     "pools": [
       {"id": "data_s001", "name": "/data_s001", "raid_type": "mdraid/btrfs", "raid_status": "healthy", "health": "ok", "total_bytes": 4000000000000, "used_bytes": 2000000000000, "free_bytes": 2000000000000, "used_pct": 50.0}
     ],
@@ -154,27 +155,38 @@ English: Main firmware polling endpoint. The recommended interval is 5 seconds; 
     "total_rx_bps": 12500000,
     "total_tx_bps": 3800000,
     "health": "ok",
+    "interface_count": 1,
     "interfaces": [
-      {"name": "eth1", "status": "up", "ip_addresses": ["192.168.101.12"], "link_speed_mbps": 2500, "rx_bps": 12000000, "tx_bps": 3600000, "rx_errors": 0, "tx_errors": 0, "rx_dropped": 0, "tx_dropped": 0}
+      {"name": "eth1", "status": "up", "ip": "192.168.101.12", "link_speed_mbps": 2500, "rx_bps": 12000000, "tx_bps": 3600000, "rx_errors": 0, "tx_errors": 0, "rx_dropped": 0, "tx_dropped": 0}
     ]
   },
-  "environment": {"fans": [], "ups": {"present": false, "status": "unknown", "health": "unknown"}},
-  "workloads": {"docker": {"running": 4, "stopped": 1, "unhealthy": 1, "containers": []}},
-  "data_protection": {"backups": [], "snapshots": []},
+  "workloads": {"docker": {"running": 4, "stopped": 1, "unhealthy": 1, "container_count": 5, "containers": []}},
+  "data_protection": {"backup_count": 0, "snapshot_count": 0, "backups": [], "snapshots": []},
   "unavailable": []
 }
 ```
 
-## UI Page Mapping / 页面字段映射
+## UI Page Mapping / 页面字段映射（8 页）
 
 | Page / 页面 | Fields / 字段 |
 | --- | --- |
-| Home / 总览 | `nas`, `cpu.usage_pct`, `memory.used_pct`, first storage pool, `network.total_rx_bps`, `network.total_tx_bps` |
-| CPU / CPU 内存 | `cpu`, `memory` |
-| Storage / 存储 | `storage.pools[]`, `storage.volumes[]` |
-| Drives / 硬盘 | `drives[]` |
-| M.2 / NVMe | `nvme[]` |
-| Network / 网络 | `network.interfaces[]`, traffic totals |
-| Power / 电源环境 | `environment.fans[]`, `environment.ups`, `nas.alerts[]` |
-| Apps / 应用 | `workloads.docker`, `data_protection` |
-| Settings / 设置 | local firmware config and `/api/v1/health` result |
+| 总览 | `nas`, `cpu.usage_pct`, `memory.used_pct`, all storage pools total, `network.total_rx_bps`, `network.total_tx_bps`, first drive temp, `workloads.docker` |
+| 性能 | `cpu`（环形图 + 负载）, `memory`（含 Swap）, health chips |
+| 存储 | `storage.pools[]`（进度条，最多 3 个）, `storage.volumes[]`（双列卡片，最多 4 个） |
+| 硬盘 | `drives[]`（4×N 槽位网格：温度、容量、坏块、通电时间） |
+| M.2 | `nvme[]`（3×N 芯片卡：容量/已用、温度、磨损、缓存状态） |
+| 网络 | `network.interfaces[]`（状态圆点 + IP + 错误/丢包，最多 6 个）, traffic totals |
+| 应用 | `workloads.docker`（运行/停止/异常统计），容器双列列表 |
+| 设置 | 本地固件配置 + `/api/v1/health` 结果 |
+
+## Removed / 已移除
+
+中文：
+
+- **环境页面**：ESP 固件已不再渲染环境页（风扇、UPS）。
+- Agent 不再采集 `environment` 字段，`/api/v1/status` 输出中不再包含 `environment` 对象。
+
+English:
+
+- **Environment page**: The ESP firmware no longer renders an environment page (fans, UPS).
+- The Agent no longer collects the `environment` field — the `environment` object is no longer present in `/api/v1/status` output.

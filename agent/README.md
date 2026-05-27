@@ -1,8 +1,8 @@
 # NAS Monitor Agent / NAS 监控 Agent
 
-中文：`agent/` 是部署在极空间 NAS 上的只读 Docker 服务。它把 Linux、SMART、RAID、网络和 Docker 状态整理成一个稳定的 JSON API，供 ESP32-S3 状态屏读取。
+中文：`agent/` 是部署在极空间 NAS 上的只读 Docker 服务。它通过 nsenter 零挂载架构把 Linux、SMART、RAID、网络和 Docker 状态整理成一个稳定的 JSON API，供 ESP32-S3 状态屏读取。
 
-English: `agent/` is a read-only Docker service for the ZSpace NAS. It normalizes Linux, SMART, RAID, network, and Docker telemetry into a stable JSON API consumed by the ESP32-S3 display.
+English: `agent/` is a read-only Docker service for the ZSpace NAS. It uses a zero-mount nsenter architecture to normalize Linux, SMART, RAID, network, and Docker telemetry into a stable JSON API consumed by the ESP32-S3 display.
 
 ## Endpoints / 接口
 
@@ -11,9 +11,9 @@ GET /api/v1/health
 GET /api/v1/status
 ```
 
-中文：完整字段定义见 `../docs/API_CONTRACT.md`。如果配置了 `NAS_AGENT_TOKEN`，ESP 请求需要带 `Authorization: Bearer <token>`。
+中文：完整字段定义见 `../docs/API_CONTRACT.md`。默认不启用 token 认证。
 
-English: The full field contract is documented in `../docs/API_CONTRACT.md`. If `NAS_AGENT_TOKEN` is configured, ESP requests must include `Authorization: Bearer <token>`.
+English: The full field contract is documented in `../docs/API_CONTRACT.md`. Token authentication is disabled by default.
 
 ## Local Run / 本地运行
 
@@ -36,27 +36,40 @@ Use `docker-compose.example.yml` as the starting point. / 以 `docker-compose.ex
 ```yaml
 services:
   nas-monitor-agent:
-    build: .
+    image: ghcr.io/panda-995/esp:latest
+    container_name: nas-monitor-agent
+    restart: unless-stopped
     network_mode: host
-    environment:
-      NAS_AGENT_TOKEN: "change-me"
-      NAS_AGENT_PORT: "8088"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /etc:/host/etc:ro
-      - /dev:/dev:ro
-      - /data_s001:/data_s001:ro
-      - /data_s002:/data_s002:ro
-      - /data_n003:/data_n003:ro
-      - /zspace:/zspace:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+    pid: host
     privileged: true
+    environment:
+      NAS_AGENT_BIND_HOST: "0.0.0.0"
+      NAS_AGENT_PORT: "8088"
+      NAS_AGENT_ENABLE_SMART: "true"
+      NAS_AGENT_ENABLE_NVME: "true"
+      NAS_AGENT_ENABLE_DOCKER: "true"
+      NAS_AGENT_POLLING_INTERVAL_MS: "1000"
+      NAS_AGENT_SMART_INTERVAL_SEC: "120"
+      NAS_AGENT_NVME_INTERVAL_SEC: "30"
+      NAS_AGENT_DOCKER_INTERVAL_SEC: "10"
+      NAS_AGENT_STORAGE_INTERVAL_SEC: "15"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 ```
 
-中文：`privileged: true` 是为了让容器能读取 SMART/NVMe/块设备信息。挂载均使用 `:ro`，HTTP API 不提供任何写操作。
+中文：
 
-English: `privileged: true` allows SMART/NVMe/block-device reads. Host mounts are `:ro`, and the HTTP API exposes no write operations.
+- **零挂载架构**：仅挂载 Docker socket。所有 `/proc`、`/sys`、`/dev`、存储卷信息通过 nsenter 借道宿主机 namespace 读取。
+- `pid: host` + `privileged: true` 让 nsenter 能进入宿主机 namespace。
+- `network_mode: host` 让 Agent 看到真实网卡、IP 和链路速率。
+- HTTP API 不提供任何写操作。
+
+English:
+
+- **Zero-mount architecture**: Only the Docker socket is mounted. All `/proc`, `/sys`, `/dev`, and storage volume reads go through nsenter in the host namespace.
+- `pid: host` + `privileged: true` enables nsenter to enter the host namespace.
+- `network_mode: host` exposes real NICs, IPs, and link speed.
+- The HTTP API exposes no write operations.
 
 ## Collectors / 采集模块
 
@@ -69,9 +82,14 @@ English: `privileged: true` allows SMART/NVMe/block-device reads. Host mounts ar
 | `drives` | SATA HDD/SSD SMART、温度、坏道、通电时间 | SATA HDD/SSD SMART, temperature, bad sectors, power-on hours |
 | `nvme` | M.2/NVMe 容量、温度、寿命/磨损 | M.2/NVMe capacity, temperature, wear |
 | `network` | 上传下载速度、网口速率、丢包和错误包 | upload/download speed, link speed, drops, errors |
-| `environment` | 风扇、UPS、传感器状态 | fans, UPS, sensor status |
 | `workloads` | Docker 容器状态 | Docker container state |
 | `data_protection` | 备份和快照占位适配 | backup and snapshot adapter placeholders |
+
+## Not Collected / 不再采集
+
+- **风扇转速**：Z4S 硬件不暴露 RPM 接口。
+- **UPS 信息**：NUT 服务被 ZOS masked。
+- **环境采集器**：已从 Agent 中移除，API 不再输出 `environment` 字段。
 
 ## Verification / 验证
 

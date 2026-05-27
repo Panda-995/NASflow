@@ -29,16 +29,20 @@ flowchart LR
 中文：
 
 - FastAPI 提供 `/api/v1/health` 和 `/api/v1/status`。
-- 采集器从 `/proc`、`/sys`、`df`、`lsblk`、`smartctl`、`mdadm`、`sensors`、Docker socket 读取数据。
+- 采集器通过 nsenter 借道宿主机 namespace，从 `/proc`、`/sys`、`df`、`lsblk`、`smartctl`、`mdadm`、Docker socket 读取数据。
+- 零挂载架构（pid:host + privileged:true），无需在极空间上 mount 任何主机卷。
 - 采集失败不会导致整个接口失败；失败字段进入 `unavailable` 数组。
 - 默认只读，不提供任何 HTTP 写操作。
+- 默认不启用 token 认证。
 
 English:
 
 - FastAPI exposes `/api/v1/health` and `/api/v1/status`.
-- Collectors read from `/proc`, `/sys`, `df`, `lsblk`, `smartctl`, `mdadm`, `sensors`, and the Docker socket.
+- Collectors use nsenter to read from `/proc`, `/sys`, `df`, `lsblk`, `smartctl`, `mdadm`, and Docker socket through the host namespace.
+- Zero-mount architecture (pid:host + privileged:true) — no host volume mounts required on ZSpace.
 - Collector failures do not fail the whole endpoint; failed fields are reported in `unavailable`.
 - The API is read-only and exposes no write operations.
+- Token authentication is disabled by default.
 
 ## Firmware Side / 固件端
 
@@ -48,7 +52,7 @@ English:
 - `wifi_manager.c` 连接 Wi-Fi。
 - `api_client.c` 拉取 NAS Agent JSON。
 - `nas_status.c` 解析共享 API 契约字段。
-- `ui.c` 使用 LVGL 绘制彩色手绘风格分页界面。
+- `ui.c` 使用 LVGL v9 绘制手绘风暖色调 8 页界面，Header 带页码圆点指示器，滑动/点击手势切页。
 
 English:
 
@@ -56,15 +60,15 @@ English:
 - `wifi_manager.c` connects to Wi-Fi.
 - `api_client.c` fetches NAS Agent JSON.
 - `nas_status.c` parses the shared API contract.
-- `ui.c` renders a colorful hand-drawn LVGL page set.
+- `ui.c` renders a hand-drawn warm-tone 8-page LVGL v9 UI with header page dots and swipe/gesture navigation.
 
 ## Data Flow / 数据流
 
 | Step | 中文 | English |
 | --- | --- | --- |
-| 1 | Docker Agent 每次请求时读取或缓存 NAS 指标 | The Docker Agent reads or caches NAS metrics per request |
+| 1 | Docker Agent 每次请求时通过 nsenter 读取或缓存 NAS 指标 | The Docker Agent reads or caches NAS metrics per request via nsenter |
 | 2 | Agent 输出统一 JSON | The Agent emits normalized JSON |
-| 3 | ESP 每隔数秒请求 `/api/v1/status` | ESP polls `/api/v1/status` every few seconds |
+| 3 | ESP 每隔 1 秒请求 `/api/v1/status` | ESP polls `/api/v1/status` every 1 second |
 | 4 | ESP 解析字段到固定大小结构体 | ESP parses fields into fixed-size structs |
 | 5 | LVGL 根据触控切页刷新卡片 | LVGL refreshes cards and pages based on touch navigation |
 
@@ -76,6 +80,7 @@ English:
 - ESP 固件对缺失字段显示 `--` 或 `unknown`。
 - SMART 和 NVMe 数据可缓存，避免高频访问硬盘。
 - ESP 端不直接 SSH 或访问 NAS 系统命令。
+- Agent 不挂载任何主机卷，零侵入。
 
 English:
 
@@ -83,3 +88,4 @@ English:
 - ESP displays `--` or `unknown` for missing fields.
 - SMART and NVMe data can be cached to avoid frequent disk access.
 - ESP never SSHs into the NAS or runs host commands directly.
+- The Agent mounts zero host volumes — zero intrusion.
