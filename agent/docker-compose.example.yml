@@ -1,0 +1,33 @@
+services:
+  nas-monitor-agent:
+    build: .
+    container_name: nas-monitor-agent
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      NAS_AGENT_BIND_HOST: "0.0.0.0"
+      NAS_AGENT_PORT: "8088"
+      NAS_AGENT_TOKEN: "change-me"
+      NAS_AGENT_HOST_PROC: "/host/proc"
+      NAS_AGENT_HOST_SYS: "/host/sys"
+      NAS_AGENT_HOST_ETC: "/host/etc"
+      NAS_AGENT_ENABLE_SMART: "true"
+      NAS_AGENT_ENABLE_NVME: "true"
+      NAS_AGENT_ENABLE_DOCKER: "true"
+      NAS_AGENT_ENABLE_UPS: "false"
+      NAS_AGENT_POLLING_INTERVAL_MS: "5000"
+      NAS_AGENT_SMART_INTERVAL_SEC: "300"
+      NAS_AGENT_NVME_INTERVAL_SEC: "60"
+      NAS_AGENT_DOCKER_INTERVAL_SEC: "10"
+      NAS_AGENT_STORAGE_INTERVAL_SEC: "30"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc:/host/etc:ro
+      - /dev:/dev:ro
+      - /data_s001:/data_s001:ro
+      - /data_s002:/data_s002:ro
+      - /data_n003:/data_n003:ro
+      - /zspace:/zspace:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true

@@ -1,0 +1,13 @@
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+*.log
+.env
+dist/
+

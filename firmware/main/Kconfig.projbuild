@@ -1,0 +1,28 @@
+menu "NAS Touch Display"
+
+config NAS_DISPLAY_WIFI_SSID
+    string "Wi-Fi SSID"
+    default ""
+
+config NAS_DISPLAY_WIFI_PASSWORD
+    string "Wi-Fi password"
+    default ""
+
+config NAS_DISPLAY_API_HOST
+    string "NAS API host"
+    default "192.168.101.12"
+
+config NAS_DISPLAY_API_PORT
+    int "NAS API port"
+    default 8088
+
+config NAS_DISPLAY_API_TOKEN
+    string "NAS API bearer token"
+    default ""
+
+config NAS_DISPLAY_POLL_INTERVAL_MS
+    int "Status polling interval in milliseconds"
+    default 5000
+
+endmenu
+
