@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from ..settings import settings
-from ..utils import host_path, list_dir, read_text
+from ..utils import host_path, list_dir, nsenter_glob, read_text
 
 _previous_cpu: tuple[int, int] | None = None
 
@@ -53,14 +53,15 @@ def _core_count() -> int:
 
 
 def _cpu_temp() -> float | None:
-    hwmon_root = Path(settings.host_sys) / "class/hwmon"
-    candidates: list[Path] = []
-    for hwmon in list_dir(hwmon_root):
+    hwmon_root = str(Path(settings.host_sys) / "class/hwmon")
+    candidates: list[str] = []
+    for hwmon in list_dir(Path(hwmon_root)):
+        hwmon_str = str(hwmon)
         name = read_text(hwmon / "name").lower()
         if name in {"k10temp", "coretemp", "cpu_thermal"}:
-            candidates.extend(hwmon.glob("temp*_input"))
-    thermal_root = Path(settings.host_sys) / "class/thermal"
-    candidates.extend(thermal_root.glob("thermal_zone*/temp"))
+            candidates.extend(nsenter_glob(hwmon_str, "temp*_input"))
+    thermal_root = str(Path(settings.host_sys) / "class/thermal")
+    candidates.extend(nsenter_glob(thermal_root, "thermal_zone*/temp"))
     for path in candidates:
         raw = read_text(path)
         try:

@@ -27,6 +27,27 @@ def _nsenter_ls(path: str, timeout: float = 3.0) -> list[str]:
     return [name for name in stdout.splitlines() if name.strip()]
 
 
+def nsenter_glob(directory: str, pattern: str) -> list[str]:
+    code, stdout, _ = run_command(
+        [
+            "nsenter", "-t", "1", "-m", "sh", "-c",
+            'for f in "$1"/$2; do [ -e "$f" ] && printf "%s\\n" "$f"; done',
+            "_", directory, pattern,
+        ],
+        timeout=4,
+    )
+    if code != 0:
+        return []
+    return [name for name in stdout.splitlines() if name.strip()]
+
+
+def nsenter_readlink(path: str) -> str:
+    code, stdout, _ = run_command(
+        ["nsenter", "-t", "1", "-m", "readlink", path], timeout=3
+    )
+    return stdout if code == 0 else ""
+
+
 def read_text(path: str | Path, default: str = "") -> str:
     path_str = str(path)
     try:

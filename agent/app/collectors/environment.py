@@ -4,22 +4,24 @@ from pathlib import Path
 from typing import Any
 
 from ..settings import settings
-from ..utils import list_dir, read_text, run_command
+from ..utils import list_dir, nsenter_glob, read_text, run_command
 
 
 def _fans() -> list[dict[str, Any]]:
     fans: list[dict[str, Any]] = []
     for hwmon in list_dir(Path(settings.host_sys) / "class/hwmon"):
         chip_name = read_text(hwmon / "name", hwmon.name)
-        for idx, fan_path in enumerate(sorted(hwmon.glob("fan*_input")), start=1):
-            raw = read_text(fan_path)
+        hwmon_str = str(hwmon)
+        fan_paths = nsenter_glob(hwmon_str, "fan*_input")
+        for idx, fan_path_str in enumerate(fan_paths, start=1):
+            raw = read_text(fan_path_str)
             try:
                 rpm = int(raw)
             except ValueError:
                 continue
             fans.append(
                 {
-                    "id": fan_path.stem,
+                    "id": Path(fan_path_str).stem,
                     "name": f"{chip_name} Fan {idx}",
                     "speed_rpm": rpm,
                     "health": "ok" if rpm > 0 else "warning",

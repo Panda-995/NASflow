@@ -5,7 +5,7 @@ from typing import Any
 
 from ..cache import TimedCache
 from ..settings import settings
-from ..utils import list_dir, read_text, run_json, stable_hash
+from ..utils import list_dir, nsenter_readlink, read_text, run_json, stable_hash
 
 _cache: TimedCache[list[dict[str, Any]]] = TimedCache()
 
@@ -30,13 +30,10 @@ def _hwmon_temps() -> dict[str, float]:
         name = read_text(hwmon / "name").lower()
         if name != "nvme":
             continue
-        device_link = hwmon / "device"
-        try:
-            real = device_link.resolve()
-        except OSError:
-            real = device_link
-        key = real.name
-        raw = read_text(hwmon / "temp1_input")
+        hwmon_str = str(hwmon)
+        target = nsenter_readlink(hwmon_str + "/device")
+        key = Path(target).name if target else hwmon.name
+        raw = read_text(hwmon_str + "/temp1_input")
         try:
             value = float(raw)
         except ValueError:
