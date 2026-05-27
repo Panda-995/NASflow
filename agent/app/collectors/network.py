@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,15 @@ _previous: dict[str, tuple[float, int, int]] = {}
 
 
 def _ip_map() -> dict[str, list[str]]:
-    data = run_json(["ip", "-j", "addr"], timeout=2)
+    code, stdout, _ = run_command(["nsenter", "-t", "1", "-n", "ip", "-j", "addr"], timeout=2)
+    if code == 0 and stdout:
+        try:
+            data = json.loads(stdout)
+        except json.JSONDecodeError:
+            data = None
+    else:
+        data = run_json(["ip", "-j", "addr"], timeout=2)
+
     result: dict[str, list[str]] = {}
     if not isinstance(data, list):
         return result
@@ -125,4 +134,3 @@ def collect() -> dict[str, Any]:
         "interfaces": interfaces[:8],
         "health": "ok",
     }
-

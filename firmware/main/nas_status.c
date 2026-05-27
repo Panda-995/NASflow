@@ -210,7 +210,8 @@ static void parse_network(cJSON *root, nas_status_t *status)
         copy_string(target->status, sizeof(target->status), json_string(iface, "status", ""));
         cJSON *ips = cJSON_GetObjectItemCaseSensitive(iface, "ip_addresses");
         cJSON *first_ip = cJSON_GetArrayItem(ips, 0);
-        copy_string(target->ip, sizeof(target->ip), cJSON_IsString(first_ip) ? first_ip->valuestring : "");
+        copy_string(target->ip, sizeof(target->ip),
+                    cJSON_IsString(first_ip) ? first_ip->valuestring : json_string(iface, "ip", ""));
         target->link_speed_mbps = (int)json_number(iface, "link_speed_mbps", -1);
         target->rx_bps = json_u64(iface, "rx_bps");
         target->tx_bps = json_u64(iface, "tx_bps");
@@ -347,4 +348,3 @@ void nas_format_uptime(uint32_t seconds, char *out, size_t out_size)
         snprintf(out, out_size, "%luh %lum", (unsigned long)hours, (unsigned long)minutes);
     }
 }
-

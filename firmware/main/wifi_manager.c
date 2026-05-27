@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "esp_event.h"
@@ -12,6 +13,7 @@
 static const char *TAG = "wifi";
 static EventGroupHandle_t s_wifi_events;
 static const int WIFI_CONNECTED_BIT = BIT0;
+static char s_ip_addr[16];
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -23,6 +25,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         xEventGroupClearBits(s_wifi_events, WIFI_CONNECTED_BIT);
         esp_wifi_connect();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        const ip_event_got_ip_t *event = (const ip_event_got_ip_t *)event_data;
+        snprintf(s_ip_addr, sizeof(s_ip_addr), IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "got ip: %s", s_ip_addr);
         xEventGroupSetBits(s_wifi_events, WIFI_CONNECTED_BIT);
     }
 }
@@ -78,3 +83,10 @@ bool wifi_manager_is_connected(void)
     return (xEventGroupGetBits(s_wifi_events) & WIFI_CONNECTED_BIT) != 0;
 }
 
+void wifi_manager_get_ip(char *out, size_t out_size)
+{
+    if (out == NULL || out_size == 0) {
+        return;
+    }
+    strlcpy(out, s_ip_addr[0] ? s_ip_addr : "0.0.0.0", out_size);
+}

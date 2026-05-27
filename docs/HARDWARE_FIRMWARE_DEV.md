@@ -8,23 +8,23 @@ English: This document describes firmware development, configuration, build, fla
 
 中文：
 
-- 使用 ESP-IDF v6.0.1 + LVGL v9。
+- 使用 ESP-IDF v6.0.1 + LVGL v8.4。
 - 驱动 Waveshare 5B 的 1024 x 600 RGB LCD。
 - 驱动 GT911 电容触控。
 - 使用 CH422G 控制触控复位和背光。
 - 通过 Wi-Fi 轮询 NAS Docker Agent。
-- 支持触控滑动切页（8 页），Header 页码圆点指示器。
-- 设置页支持虚拟键盘输入 NAS Agent 地址和端口。
+- 支持触控左右滑动切页（7 页），Header 页码圆点指示器。
+- 屏幕“后台”页显示 ESP Web 后台地址，NAS Agent 地址和端口在浏览器后台配置。
 
 English:
 
-- Use ESP-IDF v6.0.1 + LVGL v9.
+- Use ESP-IDF v6.0.1 + LVGL v8.4.
 - Drive the Waveshare 5B 1024 x 600 RGB LCD.
 - Drive GT911 capacitive touch.
 - Use CH422G for touch reset and backlight control.
 - Poll the NAS Docker Agent over Wi-Fi.
-- Support touch swipe page navigation (8 pages) with header page dots.
-- Settings page with virtual keyboard for NAS Agent address and port input.
+- Support left/right touch swipe page navigation (7 pages) with header page dots.
+- The screen's Backend page shows the ESP Web backend URL; NAS Agent address and port are configured in the browser backend.
 
 ## Board Signals / 板级信号
 
@@ -54,31 +54,49 @@ References / 参考资料：
 
 | File | 中文 | English |
 | --- | --- | --- |
-| `app_main.c` | 启动入口，初始化板级、Wi-Fi、UI、轮询任务 | startup entry, initializes board, Wi-Fi, UI, polling task |
+| `app_main.c` | 启动入口，初始化板级、Wi-Fi、UI、Web 后台、轮询任务 | startup entry, initializes board, Wi-Fi, UI, Web backend, polling task |
 | `board_5b.c` | LCD、触控、背光、LVGL tick 和 flush | LCD, touch, backlight, LVGL tick and flush |
 | `wifi_manager.c` | Wi-Fi STA 连接管理 | Wi-Fi station connection management |
 | `api_client.c` | HTTP GET `/api/v1/status` | HTTP GET `/api/v1/status` |
+| `web_server.c` | ESP 端配置后台，支持页面、配置 API、连接测试、重启 | ESP-side settings backend with page, config API, connection test, restart |
 | `nas_status.c` | JSON 解析和格式化 | JSON parsing and formatting |
-| `ui.c` | 8 页手绘风暖色调 LVGL v9 触控界面 | 8-page hand-drawn warm-tone LVGL v9 touch UI |
-| `fonts/lv_font_nas_cn_18.c` | 中文子集字体（约 174 字符） | Chinese subset font (~174 glyphs) |
+| `ui.c` | 7 页彩色手绘风 LVGL v8.4 触控界面 | 7-page colorful hand-drawn LVGL v8.4 touch UI |
+| `fonts/lv_font_nas_cn_18.c` | 未压缩 Noto Sans SC 中文子集字体 | Uncompressed Noto Sans SC Chinese subset font |
 | `Kconfig.projbuild` | Wi-Fi 和 NAS API 配置项 | Wi-Fi and NAS API config options |
 
 ## UI Design / 界面设计
 
-中文：界面采用手绘风暖色调设计，基于设计文档 `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx`。共 8 页，Header 带页码圆点指示器，左右滑动切页。无底部导航栏。
+中文：界面采用彩色手绘风桌面摆件设计，基于设计文档 `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` 和本轮 UI/UX 梳理。共 7 页，Header 带页码圆点指示器，左右滑动切页。设计重点是降低单页信息密度、突出关键数值、用色块和纸片感卡片建立摆件属性。配置不再塞进屏幕虚拟键盘，而是放到 ESP Web 后台。
 
-English: The UI uses a hand-drawn warm-tone design based on `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx`. 8 pages with header page dots and swipe navigation. No bottom navigation bar.
+English: The UI uses a colorful hand-drawn desktop-ornament design based on `docs/NAS_Desktop_UI_Design_Document_No_Environment.docx` and this round of UI/UX review. It has 7 pages with header page dots and swipe navigation. The design reduces per-page density, prioritizes key values, and uses colored rails plus paper-like cards to improve the ornament feel. Configuration is no longer squeezed into an on-screen keyboard; it lives in the ESP Web backend.
 
 | Page | 中文 | English |
 | --- | --- | --- |
 | 总览 | NAS 身份、CPU/内存进度条、存储环形图、网络/温度/应用摘要 | NAS identity, CPU/memory bars, storage ring, network/temp/apps summary |
 | 性能 | CPU 环形图 + 1/5/15min 负载、内存详情 + Swap、健康标签 | CPU arc + load, memory + swap, health chips |
-| 存储 | 存储池进度条（最多 3 个）、卷双列卡片（最多 4 个） | pool bars (max 3), volume dual-column cards (max 4) |
-| 硬盘 | 4×N 槽位网格：盘号、类型、温度、容量、坏块、通电时间 | 4×N slot grid: bay, type, temp, capacity, bad sectors, power-on hours |
-| M.2 | 3×N 芯片卡：型号、容量/已用、温度、磨损、缓存状态 | 3×N chip cards: model, capacity/used, temp, wear, cache state |
-| 网络 | 总览卡 + 6 网口卡（状态圆点 + IP + 错误/丢包） | summary + 6 interface cards (status dot + IP + errors/drops) |
-| 应用 | Docker 运行/停止/异常统计 + 容器双列列表 | Docker running/stopped/unhealthy stats + container dual-column list |
-| 设置 | NAS Agent 地址/端口输入 + 虚拟键盘 + 保存按钮 + 连接状态 | Agent address/port entry + virtual keyboard + save + connection status |
+| 存储 | 所有存储池合计总容量/已用/剩余、单池健康摘要 | combined total/used/free capacity across all pools, per-pool health summary |
+| 硬盘 | HDD/SSD 与 M.2/NVMe 卡片：盘号/槽位、温度、容量、坏块、通电时间、磨损 | HDD/SSD and M.2/NVMe cards: bay/slot, temp, capacity, bad sectors, power-on hours, wear |
+| 网络 | 上传下载、已接入网口数量、6 个网口卡（IP + 速率 + 错误/丢包） | upload/download, connected NIC count, 6 interface cards (IP + speed + errors/drops) |
+| 服务 | Docker 运行/停止/异常统计 + 容器列表 | Docker running/stopped/unhealthy stats + container list |
+| 后台 | ESP Web 后台地址、当前 NAS 目标、连接状态 | ESP Web backend URL, current NAS target, connection state |
+
+### UI/UX Decisions / UI/UX 决策
+
+中文：
+
+- 信息架构：屏幕只展示，不承担复杂输入；复杂设置迁移到 Web 后台。
+- 视觉层级：每页 1 个主卡 + 少量辅卡，避免把所有 NAS 信息塞满一屏。
+- 存储页：主卡显示所有存储池合计，避免用户误读单池容量为总容量。
+- 网络页：网口卡直接显示 IP，已接入数量放在顶部摘要。
+- 服务页：只展示 Docker，并加入容器列表，备份/快照不再混入。
+
+English:
+
+- Information architecture: the screen displays; complex input belongs in the Web backend.
+- Visual hierarchy: each page uses one primary card plus a few secondary cards instead of filling the whole screen.
+- Storage page: the primary card shows combined totals across all pools to avoid mistaking one pool for total capacity.
+- Network page: interface cards show IP addresses directly, with connected count in the top summary.
+- Services page: Docker only, with a container list; backup/snapshot data is no longer mixed in.
 
 ### Color System / 配色
 
@@ -91,7 +109,7 @@ English: The UI uses a hand-drawn warm-tone design based on `docs/NAS_Desktop_UI
 | Primary text / 主文字 | 深蓝灰 | `#2C3E50` |
 | Secondary text / 次级文字 | 灰蓝 | `#7F8C8D` |
 
-Page accent colors: 红(总览) / 蓝(性能) / 琥珀(存储) / 绿(硬盘) / 紫(M.2) / 青(网络) / 橙(应用) / 灰(设置)
+Page accent colors: 珊瑚红(总览) / 青绿(性能) / 琥珀(存储) / 蓝紫(硬盘) / 绿色(网络) / 紫色(服务) / 天蓝(后台)
 
 ## Build Steps / 构建步骤
 
@@ -103,9 +121,9 @@ idf.py menuconfig
 idf.py build
 ```
 
-中文：当前构建已通过，二进制体积约 `0x12d730`，自定义 6MB factory app 分区还有约 80% 余量。
+中文：当前构建已通过，二进制体积约 `0x1304f0`，自定义 6MB factory app 分区还有约 80% 余量。
 
-English: The current build passes. The app binary is about `0x12d730`, leaving about 80% free in the custom 6MB factory app partition.
+English: The current build passes. The app binary is about `0x1304f0`, leaving about 80% free in the custom 6MB factory app partition.
 
 ## Flash Steps / 烧录步骤
 
@@ -124,35 +142,37 @@ English: Flashing must be performed from the PC connected to the ESP. Wi-Fi SSID
 中文：
 
 - 启动后初始化 LCD 和触控。
-- 连接 Wi-Fi。
-- 每 1 秒请求 `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status`。
+- 连接 Wi-Fi，并在 80 端口启动 ESP Web 后台。
+- 屏幕“后台”页显示 `http://{ESP_IP}`。
+- 按配置的轮询间隔请求 `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status`。
 - 解析成功后刷新当前页面。
 - 请求失败时显示离线或连接错误状态。
-- 设置页可用虚拟键盘输入 IP/域名和端口，并保存到 NVS。
+- Web 后台可保存 IP/域名、端口、可选 token、轮询间隔到 NVS，并通过 `/api/test` 测试 NAS Agent 健康接口。
 - 左右滑动切页，Header 圆点指示当前位置。
 
 English:
 
 - Initialize LCD and touch after boot.
-- Connect to Wi-Fi.
-- Request `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status` every 1 second.
+- Connect to Wi-Fi and start the ESP Web backend on port 80.
+- Show `http://{ESP_IP}` on the screen's Backend page.
+- Request `http://{NAS_HOST_OR_IP}:{PORT}/api/v1/status` at the configured polling interval.
 - Refresh the current page after a successful parse.
 - Show offline or connection error state on request failure.
-- The Settings page uses a virtual keyboard to save IP/hostname and port to NVS.
+- The Web backend saves IP/hostname, port, optional token, and polling interval to NVS, and tests the NAS Agent health endpoint through `/api/test`.
 - Swipe left/right to change pages, header dots indicate current position.
 
 ## Next Firmware Improvements / 后续固件增强
 
 中文：
 
-- 增加屏幕上的 Wi-Fi 输入界面，进一步减少依赖 `menuconfig`。
+- 增加 Web 后台中的 Wi-Fi 配网流程，进一步减少依赖 `menuconfig`。
 - 增加亮度滑杆和息屏策略。
 - 增加 OTA 更新。
 - 网络页加入折线图趋势展示。
 
 English:
 
-- Add on-device Wi-Fi entry to further reduce reliance on `menuconfig`.
+- Add Wi-Fi provisioning to the Web backend to further reduce reliance on `menuconfig`.
 - Add brightness control and screen sleep policy.
 - Add OTA update.
 - Add line chart trend display on the Network page.

@@ -7,5 +7,6 @@ typedef bool (*ui_endpoint_save_cb_t)(const char *host, int port, void *user_dat
 void ui_init(void);
 void ui_set_endpoint_config(const char *host, int port);
 void ui_set_endpoint_save_callback(ui_endpoint_save_cb_t callback, void *user_data);
+void ui_set_web_url(const char *url);
 void ui_set_message(const char *message);
 void ui_update_status(const nas_status_t *status, bool online);

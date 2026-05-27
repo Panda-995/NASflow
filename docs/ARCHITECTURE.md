@@ -17,8 +17,10 @@ flowchart LR
     WiFi["Wi-Fi"]
     Client["HTTP Client"]
     Parser["JSON Parser"]
-    UI["LVGL Touch UI"]
+    UI["LVGL Touch UI / 触控展示"]
+    Web["ESP Web Backend / ESP 后台"]
     WiFi --> Client --> Parser --> UI
+    WiFi --> Web
   end
 
   API -->|GET /api/v1/status| WiFi
@@ -52,7 +54,8 @@ English:
 - `wifi_manager.c` 连接 Wi-Fi。
 - `api_client.c` 拉取 NAS Agent JSON。
 - `nas_status.c` 解析共享 API 契约字段。
-- `ui.c` 使用 LVGL v9 绘制手绘风暖色调 8 页界面，Header 带页码圆点指示器，滑动/点击手势切页。
+- `ui.c` 使用 LVGL v8.4 绘制彩色手绘风 7 页界面，Header 带页码圆点指示器，左右滑动切页。
+- `web_server.c` 在 ESP 上提供 Web 后台，用于配置 NAS 主机名/IP、端口、可选 token 和轮询间隔，并通过 `/api/test` 从 ESP 侧测试 NAS Agent 健康接口。
 
 English:
 
@@ -60,7 +63,8 @@ English:
 - `wifi_manager.c` connects to Wi-Fi.
 - `api_client.c` fetches NAS Agent JSON.
 - `nas_status.c` parses the shared API contract.
-- `ui.c` renders a hand-drawn warm-tone 8-page LVGL v9 UI with header page dots and swipe/gesture navigation.
+- `ui.c` renders a colorful hand-drawn 7-page LVGL v8.4 UI with header page dots and left/right swipe navigation.
+- `web_server.c` exposes an ESP-hosted Web backend for NAS hostname/IP, port, optional token, and polling interval, and tests the NAS Agent health endpoint from the ESP side through `/api/test`.
 
 ## Data Flow / 数据流
 
@@ -68,9 +72,11 @@ English:
 | --- | --- | --- |
 | 1 | Docker Agent 每次请求时通过 nsenter 读取或缓存 NAS 指标 | The Docker Agent reads or caches NAS metrics per request via nsenter |
 | 2 | Agent 输出统一 JSON | The Agent emits normalized JSON |
-| 3 | ESP 每隔 1 秒请求 `/api/v1/status` | ESP polls `/api/v1/status` every 1 second |
+| 3 | ESP 按配置间隔请求 `/api/v1/status` | ESP polls `/api/v1/status` at the configured interval |
 | 4 | ESP 解析字段到固定大小结构体 | ESP parses fields into fixed-size structs |
 | 5 | LVGL 根据触控切页刷新卡片 | LVGL refreshes cards and pages based on touch navigation |
+| 6 | 浏览器访问 ESP Web 后台修改连接配置，配置写入 NVS | Browser changes connection settings through the ESP Web backend, persisted to NVS |
+| 7 | Web 后台的连接测试由 ESP 请求 NAS Agent `/api/v1/health` | The Web backend connection test has the ESP request NAS Agent `/api/v1/health` |
 
 ## Reliability Rules / 可靠性规则
 

@@ -166,18 +166,17 @@ English: Main firmware polling endpoint. The recommended interval is 1 second; S
 }
 ```
 
-## UI Page Mapping / 页面字段映射（8 页）
+## UI Page Mapping / 页面字段映射（7 页）
 
 | Page / 页面 | Fields / 字段 |
 | --- | --- |
 | 总览 | `nas`, `cpu.usage_pct`, `memory.used_pct`, all storage pools total, `network.total_rx_bps`, `network.total_tx_bps`, first drive temp, `workloads.docker` |
 | 性能 | `cpu`（环形图 + 负载）, `memory`（含 Swap）, health chips |
-| 存储 | `storage.pools[]`（进度条，最多 3 个）, `storage.volumes[]`（双列卡片，最多 4 个） |
-| 硬盘 | `drives[]`（4×N 槽位网格：温度、容量、坏块、通电时间） |
-| M.2 | `nvme[]`（3×N 芯片卡：容量/已用、温度、磨损、缓存状态） |
-| 网络 | `network.interfaces[]`（状态圆点 + IP + 错误/丢包，最多 6 个）, traffic totals |
-| 应用 | `workloads.docker`（运行/停止/异常统计），容器双列列表 |
-| 设置 | 本地固件配置 + `/api/v1/health` 结果 |
+| 存储 | `storage.pools[]` 合计 `total_bytes/used_bytes/free_bytes`，并展示最多 3 个单池健康摘要 |
+| 硬盘 | `drives[]` + `nvme[]`（HDD/SSD 与 M.2/NVMe 卡片：温度、容量、坏块、通电时间、磨损、缓存状态） |
+| 网络 | `network.interfaces[]`（IP + 速率 + 错误/丢包，最多 6 个）, traffic totals |
+| 服务 | `workloads.docker`（运行/停止/异常统计 + `containers[]` 容器列表） |
+| 后台 | ESP 本地配置状态，不依赖 NAS API；Web 后台通过 `GET /api/config` 暴露脱敏配置，通过 `GET /api/test` 测试 NAS Agent 健康接口 |
 
 ## Removed / 已移除
 

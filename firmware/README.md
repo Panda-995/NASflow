@@ -1,8 +1,8 @@
 # ESP32-S3 NAS Touch Display Firmware / ESP32-S3 NAS 触控屏固件
 
-中文：`firmware/` 是 Waveshare ESP32-S3-Touch-LCD-5B 的 ESP-IDF v6.0.1 + LVGL v9 固件。它通过 Wi-Fi 访问 NAS Docker Agent，以手绘风暖色调 8 页触控界面显示 NAS 状态。Header 带页码圆点指示器，左右滑动切页，无底部导航栏。
+中文：`firmware/` 是 Waveshare ESP32-S3-Touch-LCD-5B 的 ESP-IDF v6.0.1 + LVGL v8.4 固件。它通过 Wi-Fi 访问 NAS Docker Agent，以彩色手绘风 7 页触控界面显示 NAS 状态。Header 带页码圆点指示器，左右滑动切页；NAS 地址、端口、token 和轮询间隔通过 ESP 自带 Web 后台配置。
 
-English: `firmware/` contains the ESP-IDF v6.0.1 + LVGL v9 firmware for the Waveshare ESP32-S3-Touch-LCD-5B. It connects to the NAS Docker Agent over Wi-Fi and renders a hand-drawn warm-tone 8-page touch dashboard with header page dots and swipe navigation. No bottom navigation bar.
+English: `firmware/` contains the ESP-IDF v6.0.1 + LVGL v8.4 firmware for the Waveshare ESP32-S3-Touch-LCD-5B. It connects to the NAS Docker Agent over Wi-Fi and renders a colorful hand-drawn 7-page touch dashboard with header page dots and swipe navigation. The NAS address, port, token, and polling interval are configured through the ESP-hosted Web backend.
 
 ## Hardware / 硬件
 
@@ -23,9 +23,9 @@ idf.py set-target esp32s3
 idf.py build
 ```
 
-中文：当前环境已用 ESP-IDF v6.0.1 构建通过。生成文件在 `build/nas_touch_display.bin`，二进制约 `0x12d730`（还剩约 80% 空间）。
+中文：当前环境已用 ESP-IDF v6.0.1 构建通过。生成文件在 `build/nas_touch_display.bin`，二进制约 `0x1304f0`（还剩约 80% 空间）。
 
-English: The current environment builds successfully with ESP-IDF v6.0.1. The generated firmware image is `build/nas_touch_display.bin`, approximately `0x12d730` bytes (~80% free).
+English: The current environment builds successfully with ESP-IDF v6.0.1. The generated firmware image is `build/nas_touch_display.bin`, approximately `0x1304f0` bytes (~80% free).
 
 ## Configuration / 配置
 
@@ -49,9 +49,15 @@ NAS Touch Display
 
 English: Without Wi-Fi SSID and password, the firmware can build but the device cannot reach the NAS. Flash after configuration for the useful end-to-end test.
 
-中文：设备端"设置"页支持虚拟键盘直接输入 NAS Agent 的 IP 或域名，以及端口号。保存后会写入 NVS，后续轮询会使用新地址，无需重新编译固件。
+中文：设备连上 Wi-Fi 后会在“后台”页显示 ESP Web 后台地址。用同一局域网内的浏览器打开 `http://{ESP_IP}/`，可以设置 NAS Agent 的 IP/域名、端口、可选 Bearer token、轮询间隔，也可以重启设备。保存后会写入 NVS，后续轮询会使用新地址，无需重新编译固件。
 
-English: The on-device Settings page uses a virtual keyboard to accept either a NAS Agent IP address or hostname plus a port. Saving writes the endpoint to NVS, so later polling uses the new address without rebuilding the firmware.
+English: After Wi-Fi connects, the Backend page shows the ESP Web backend URL. Open `http://{ESP_IP}/` from a browser on the same LAN to configure the NAS Agent IP/hostname, port, optional Bearer token, polling interval, or restart the device. Saving writes the endpoint to NVS, so later polling uses the new address without rebuilding the firmware.
+
+## Web Backend / Web 后台
+
+中文：Web 后台运行在 ESP 的 80 端口，包含连接设置、快捷刷新间隔、连接诊断、配置 JSON 和重启入口。`GET /api/config` 返回脱敏配置，`GET /api/test` 由 ESP 直接请求 NAS Agent 的 `/api/v1/health`，页面表单提交到 `POST /config`。token 不会在页面回显；留空表示保留旧值，勾选清除才会删除。
+
+English: The Web backend runs on ESP port 80 and includes connection settings, quick polling presets, connection diagnostics, config JSON access, and restart. `GET /api/config` returns redacted settings, `GET /api/test` makes the ESP call the NAS Agent `/api/v1/health` directly, and the HTML form submits to `POST /config`. The token is never echoed back in the page; leaving it empty keeps the previous value, and the clear checkbox removes it.
 
 ## Flash / 烧录
 
@@ -63,18 +69,17 @@ idf.py -p COM6 flash monitor
 
 English: Flashing overwrites the current ESP32-S3 firmware. Start the Docker Agent on the NAS first, otherwise the display will show offline/connection failure state.
 
-## UI Pages / 界面分页（8 页）
+## UI Pages / 界面分页（7 页）
 
 | Page | 中文显示内容 | English content |
 | --- | --- | --- |
 | 总览 | NAS 身份、CPU/内存进度条、存储环形图、网络/温度/应用摘要 | NAS identity, CPU/memory bars, storage ring, network/temp/apps summary |
 | 性能 | CPU 环形图 + 1/5/15min 负载、内存详情 + Swap、健康标签 | CPU arc + load, memory + swap, health chips |
-| 存储 | 存储池进度条（最多 3 个）、卷双列卡片（最多 4 个） | pool bars (max 3), volume dual-column cards (max 4) |
-| 硬盘 | 4×N 槽位网格：温度、容量、坏块、通电时间 | 4×N slot grid: temperature, capacity, bad sectors, power-on hours |
-| M.2 | 3×N 芯片卡：容量/已用、温度、磨损寿命、缓存状态 | 3×N chip cards: capacity/used, temperature, wear, cache state |
-| 网络 | 总览卡 + 网口卡（状态圆点 + IP + 错误/丢包） | summary + interface cards (status dot + IP + errors/drops) |
-| 应用 | Docker 运行/停止/异常统计 + 容器双列列表 | Docker running/stopped/unhealthy stats + container dual-column list |
-| 设置 | NAS Agent 地址/端口输入 + 虚拟键盘 + 保存 + 连接状态 | Agent address/port entry + virtual keyboard + save + connection status |
+| 存储 | 所有存储池合计总容量/已用/剩余、单池健康摘要 | combined total/used/free capacity across all pools, per-pool health summary |
+| 硬盘 | HDD/SSD 与 M.2/NVMe 卡片：温度、容量、坏块、通电时间、磨损 | HDD/SSD and M.2/NVMe cards: temperature, capacity, bad sectors, power-on hours, wear |
+| 网络 | 上传下载、已接入网口数量、每个网口 IP/速率/错误/丢包 | upload/download, connected NIC count, per-interface IP/speed/errors/drops |
+| 服务 | Docker 运行/停止/异常统计 + 容器列表 | Docker running/stopped/unhealthy stats + container list |
+| 后台 | ESP Web 后台地址、当前 NAS 目标、连接状态 | ESP Web backend URL, current NAS target, connection state |
 
 ## Color System / 配色
 
@@ -87,10 +92,10 @@ English: Flashing overwrites the current ESP32-S3 firmware. Start the Docker Age
 | Primary text / 主文字 | `#2C3E50` |
 | Secondary text / 次级文字 | `#7F8C8D` |
 
-Page accent colors: 红(总览) / 蓝(性能) / 琥珀(存储) / 绿(硬盘) / 紫(M.2) / 青(网络) / 橙(应用) / 灰(设置)
+Page accent colors: 珊瑚红(总览) / 青绿(性能) / 琥珀(存储) / 蓝紫(硬盘) / 绿色(网络) / 紫色(服务) / 天蓝(后台)
 
 ## Implementation Notes / 实现说明
 
-中文：板级初始化使用 Waveshare 5B 官方 RGB/GT911/CH422G 引脚，已适配 ESP-IDF v6 的新 I2C master API。LVGL 使用 PSRAM 绘图缓冲，HTTP 客户端解析 `/api/v1/status` 的共享 JSON 字段。中文字体子集约 174 字符，使用 4bpp 位图格式。
+中文：板级初始化使用 Waveshare 5B 官方 RGB/GT911/CH422G 引脚，已适配 ESP-IDF v6 的新 I2C master API。LVGL 使用 PSRAM 绘图缓冲，HTTP 客户端解析 `/api/v1/status` 的共享 JSON 字段。中文界面使用未压缩的 Noto Sans SC 子集位图字体，以减少乱码和缺字。
 
-English: Board bring-up uses the Waveshare 5B RGB/GT911/CH422G pin map and ESP-IDF v6's new I2C master API. LVGL draw buffers live in PSRAM, and the HTTP client parses the shared `/api/v1/status` JSON fields. The Chinese subset font contains ~174 glyphs in 4bpp bitmap format.
+English: Board bring-up uses the Waveshare 5B RGB/GT911/CH422G pin map and ESP-IDF v6's new I2C master API. LVGL draw buffers live in PSRAM, and the HTTP client parses the shared `/api/v1/status` JSON fields. The Chinese UI uses an uncompressed Noto Sans SC subset bitmap font to reduce mojibake and missing glyphs.

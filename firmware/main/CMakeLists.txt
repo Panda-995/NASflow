@@ -7,11 +7,13 @@ idf_component_register(
         "fonts/lv_font_nas_cn_18.c"
         "nas_status.c"
         "ui.c"
+        "web_server.c"
         "wifi_manager.c"
     INCLUDE_DIRS "."
     REQUIRES
         esp_event
         esp_http_client
+        esp_http_server
         esp_lcd
         esp_netif
         esp_timer

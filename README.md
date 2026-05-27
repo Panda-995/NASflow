@@ -6,9 +6,9 @@ English: This project builds a NAS telemetry touch display for the Waveshare ESP
 
 ## Current Status / 当前状态
 
-中文：项目已构建通过并烧录到 COM6 的 ESP32-S3-Touch-LCD-5B。固件通过 Wi-Fi 轮询 NAS Docker Agent 的 `/api/v1/status`，以手绘风暖色调 8 页触控界面展示 NAS 状态。Agent 端采用零挂载架构（pid:host + nsenter），无需在极空间上挂载主机卷。
+中文：项目已构建通过并烧录到 COM6 的 ESP32-S3-Touch-LCD-5B。固件通过 Wi-Fi 轮询 NAS Docker Agent 的 `/api/v1/status`，以彩色手绘风 7 页触控界面展示 NAS 状态；配置入口改为 ESP 自带 Web 后台，屏幕端只负责展示后台地址和运行状态。Agent 端采用零挂载架构（pid:host + nsenter），无需在极空间上挂载主机卷。
 
-English: The project builds successfully and has been flashed to the ESP32-S3-Touch-LCD-5B on COM6. The firmware polls the NAS Docker Agent `/api/v1/status` over Wi-Fi and renders a hand-drawn warm-tone 8-page touch UI. The Agent uses a zero-mount architecture (pid:host + nsenter), requiring no host volume mounts on ZSpace.
+English: The project builds successfully and has been flashed to the ESP32-S3-Touch-LCD-5B on COM6. The firmware polls the NAS Docker Agent `/api/v1/status` over Wi-Fi and renders a colorful hand-drawn 7-page touch UI. Settings are handled by the ESP-hosted Web backend; the screen only shows the backend URL and runtime state. The Agent uses a zero-mount architecture (pid:host + nsenter), requiring no host volume mounts on ZSpace.
 
 ## Target Hardware / 目标硬件
 
@@ -32,13 +32,13 @@ References / 参考资料：
 
 ```text
 ESP32-S3-Touch-LCD-5B
-  ESP-IDF v6.0.1 + LVGL v9
+  ESP-IDF v6.0.1 + LVGL v8.4
   Wi-Fi station
-  HTTP polling (1 second interval)
-  Left/right swipe page navigation (8 pages)
+  HTTP polling (configurable 1-60 second interval)
+  Left/right swipe page navigation (7 pages)
   Header page dots for visual page position
-  On-device API host/domain and port input with virtual keyboard
-  Hand-drawn warm-tone dashboard
+  ESP Web backend on port 80 for host/domain, port, token, and polling interval
+  Colorful hand-drawn desktop ornament dashboard
 
 NAS Docker Agent
   FastAPI service
@@ -49,18 +49,17 @@ NAS Docker Agent
   GET /api/v1/status
 ```
 
-## UI Pages / 界面分页（8 页）
+## UI Pages / 界面分页（7 页）
 
 | Page | 中文 | English |
 | --- | --- | --- |
 | 总览 | NAS 身份、CPU/内存、存储环形图、网络/温度/应用摘要 | NAS identity, CPU/memory, storage ring, network/temp/apps summary |
 | 性能 | CPU 环形图 + 负载、内存详情 + Swap、健康标签 | CPU arc + load, memory details + swap, health chips |
-| 存储 | 存储池进度条、卷双列卡片 | pool bars, volume dual-column cards |
-| 硬盘 | 4×N 槽位网格：温度、容量、坏块、通电时间 | 4×N slot grid: temperature, capacity, bad sectors, power-on hours |
-| M.2 | 3×N 芯片卡：容量已用、温度、磨损寿命 | 3×N chip cards: capacity used, temperature, wear |
-| 网络 | 总览卡 + 网口卡（状态点 + IP + 错误/丢包） | summary + interface cards (status dot + IP + errors/drops) |
-| 应用 | Docker 统计 + 容器双列列表 | Docker stats + container dual-column list |
-| 设置 | NAS Agent 地址/端口输入 + 虚拟键盘 + 连接状态 | Agent address/port entry + virtual keyboard + connection status |
+| 存储 | 所有存储池合计总容量/已用/剩余、单池健康摘要 | combined total/used/free capacity across all pools, per-pool health summary |
+| 硬盘 | HDD/SSD 与 M.2/NVMe 卡片：温度、容量、坏块、通电时间、磨损 | HDD/SSD and M.2/NVMe cards: temperature, capacity, bad sectors, power-on hours, wear |
+| 网络 | 上传下载、已接入网口数量、每个网口 IP/速率/错误/丢包 | upload/download, connected NIC count, per-interface IP/speed/errors/drops |
+| 服务 | Docker 总览 + 容器列表 | Docker summary + container list |
+| 后台 | ESP Web 后台地址、当前 NAS 目标、连接状态 | ESP Web backend URL, current NAS target, connection state |
 
 ## Directory Guide / 目录说明
 
@@ -79,16 +78,18 @@ NAS Docker Agent
 中文：
 
 1. 在 NAS 上使用 `agent/docker-compose.example.yml` 部署 Agent（零挂载架构，默认端口 `8088`，无需 token）。
-2. 在 `firmware` 中运行 `idf.py menuconfig`，填写 Wi-Fi SSID 和密码。NAS API 主机名/IP 与端口也可在设备设置页手动输入保存。
+2. 在 `firmware` 中运行 `idf.py menuconfig`，填写 Wi-Fi SSID 和密码。
 3. 构建并烧录：`idf.py -p COM6 build flash`。
-4. 设备启动后会轮询 `http://{NAS_IP}:8088/api/v1/status` 并用触控分页显示。
+4. 设备连上 Wi-Fi 后，在屏幕“后台”页查看 ESP 地址，打开 `http://{ESP_IP}/` 配置 NAS 主机名/IP、端口、可选 token 和轮询间隔，也可以用“测试连接”检查 NAS Agent 健康接口。
+5. 设备会轮询 `http://{NAS_IP}:8088/api/v1/status` 并用左右滑动分页显示。
 
 English:
 
 1. Deploy `agent/docker-compose.example.yml` on the NAS (zero-mount architecture, default port `8088`, no token required).
-2. Run `idf.py menuconfig` in `firmware` and set Wi-Fi SSID and password. The NAS API hostname/IP and port can also be entered and saved on the device settings page.
+2. Run `idf.py menuconfig` in `firmware` and set Wi-Fi SSID and password.
 3. Build and flash with `idf.py -p COM6 build flash`.
-4. The device polls `http://{NAS_IP}:8088/api/v1/status` and presents metrics across 8 touch pages.
+4. After Wi-Fi connects, read the ESP address from the screen's Backend page and open `http://{ESP_IP}/` to configure the NAS hostname/IP, port, optional token, and polling interval. The Connection Test checks the NAS Agent health endpoint from the ESP itself.
+5. The device polls `http://{NAS_IP}:8088/api/v1/status` and presents metrics across swipeable pages.
 
 ## Safety Boundary / 安全边界
 
