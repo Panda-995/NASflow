@@ -1,6 +1,6 @@
 services:
   nas-monitor-agent:
-    build: .
+    image: ghcr.io/panda-995/esp:latest
     container_name: nas-monitor-agent
     restart: unless-stopped
     network_mode: host

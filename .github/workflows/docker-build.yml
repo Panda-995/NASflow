@@ -28,13 +28,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image via docker compose
-        run: |
-          docker compose -p nas -f agent/docker-compose.example.yml build
-
-      - name: Tag and push image
+      - name: Build Docker image
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER}/esp:latest
-          docker tag nas-nas-monitor-agent $IMAGE
+          docker build -t $IMAGE ./agent
           docker push $IMAGE
