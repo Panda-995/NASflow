@@ -31,25 +31,23 @@ def _fans() -> list[dict[str, Any]]:
 
 
 def _ups() -> dict[str, Any]:
+    empty = {
+        "present": False,
+        "status": "unknown",
+        "battery_pct": None,
+        "load_pct": None,
+        "runtime_sec": None,
+        "health": "unknown",
+    }
     if not settings.enable_ups:
-        return {
-            "present": False,
-            "status": "unknown",
-            "battery_pct": None,
-            "load_pct": None,
-            "runtime_sec": None,
-            "health": "unknown",
-        }
-    code, stdout, _ = run_command(["upsc", "ups"], timeout=3)
-    if code != 0:
-        return {
-            "present": False,
-            "status": "unknown",
-            "battery_pct": None,
-            "load_pct": None,
-            "runtime_sec": None,
-            "health": "unknown",
-        }
+        return empty
+    code, stdout, _ = run_command(["upsc", "-l"], timeout=3)
+    if code != 0 or not stdout.strip():
+        return empty
+    ups_name = stdout.splitlines()[0].split(":")[0].strip()
+    code, stdout, _ = run_command(["upsc", ups_name], timeout=3)
+    if code != 0 or not stdout.strip():
+        return empty
     values: dict[str, str] = {}
     for line in stdout.splitlines():
         if ":" in line:
