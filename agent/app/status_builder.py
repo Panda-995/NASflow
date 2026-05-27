@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Any, Callable
 
-from .collectors import cpu, data_protection, drives, environment, memory, network, nvme, storage, system, workloads
+from .collectors import cpu, data_protection, drives, memory, network, nvme, storage, system, workloads
 from .settings import settings
 
 
@@ -24,7 +24,6 @@ def build_status() -> dict[str, Any]:
     drive_status = _safe_collect("drives", unavailable, drives.collect, [])
     nvme_status = _safe_collect("nvme", unavailable, nvme.collect, [])
     network_status = _safe_collect("network", unavailable, network.collect, {"interfaces": []})
-    environment_status = _safe_collect("environment", unavailable, environment.collect, {"fans": [], "ups": {}})
     workload_status = _safe_collect("workloads", unavailable, workloads.collect, {})
     protection_status = _safe_collect("data_protection", unavailable, data_protection.collect, {})
     nas["health"] = _overall_health(
@@ -53,7 +52,6 @@ def build_status() -> dict[str, Any]:
         "drives": drive_status,
         "nvme": nvme_status,
         "network": network_status,
-        "environment": environment_status,
         "workloads": workload_status,
         "data_protection": protection_status,
         "unavailable": unavailable,
