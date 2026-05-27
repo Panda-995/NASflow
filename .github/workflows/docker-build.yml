@@ -10,10 +10,6 @@ on:
       - '.github/workflows/docker-build.yml'
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/esp
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -28,7 +24,7 @@ jobs:
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -38,6 +34,7 @@ jobs:
 
       - name: Tag and push image
         run: |
-          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER}/esp:latest
           docker tag nas-monitor-agent $IMAGE
           docker push $IMAGE
