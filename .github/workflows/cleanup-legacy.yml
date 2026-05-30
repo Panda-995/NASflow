@@ -1,0 +1,40 @@
+name: Cleanup Legacy GHCR Packages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  cleanup-legacy:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Remove legacy nas-monitor-agent package
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "=== Checking legacy ${OWNER}/nas-monitor-agent ==="
+
+          VERSIONS=$(gh api -H "Accept: application/vnd.github+json" \
+            "/user/packages/container/nas-monitor-agent/versions" \
+            --jq '.[].id' 2>/dev/null || true)
+
+          if [ -z "$VERSIONS" ]; then
+            echo "No legacy nas-monitor-agent package found — nothing to clean"
+            exit 0
+          fi
+
+          echo "Found legacy nas-monitor-agent with $(echo "$VERSIONS" | wc -l) version(s)"
+          for id in $VERSIONS; do
+            echo "  Deleting version ${id}..."
+            gh api --method DELETE --silent \
+              -H "Accept: application/vnd.github+json" \
+              "/user/packages/container/nas-monitor-agent/versions/${id}" || true
+          done
+
+          echo "Legacy nas-monitor-agent package cleaned"
+        env:
+          GH_TOKEN: ${{ github.token }}
