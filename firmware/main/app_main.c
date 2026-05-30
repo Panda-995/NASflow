@@ -6,6 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
+#include "power_monitor.h"
 #include "ui.h"
 #include "web_server.h"
 #include "wifi_manager.h"
@@ -19,6 +20,13 @@ static const char *TAG = "app";
 static app_config_t s_config;
 static nas_status_t s_status;
 static SemaphoreHandle_t s_config_lock;
+
+static void refresh_power_status(void)
+{
+    power_status_t power_status;
+    power_monitor_read(&power_status);
+    ui_set_power_status(&power_status);
+}
 
 static void copy_config(app_config_t *out)
 {
@@ -92,10 +100,12 @@ void app_main(void)
     s_config_lock = xSemaphoreCreateMutex();
     app_config_load(&s_config);
 
+    ESP_ERROR_CHECK(power_monitor_init());
     ESP_ERROR_CHECK(board_5b_init());
     ui_set_endpoint_config(s_config.api_host, s_config.api_port);
     ui_set_endpoint_save_callback(endpoint_save_cb, NULL);
     ui_init();
+    refresh_power_status();
 
     if (wifi_manager_start(s_config.wifi_ssid, s_config.wifi_password) == ESP_OK) {
         ui_set_message("正在连接 Wi-Fi");
@@ -116,6 +126,8 @@ void app_main(void)
 
     nas_status_init(&s_status);
     while (true) {
+        refresh_power_status();
+
         app_config_t current_config;
         copy_config(&current_config);
 

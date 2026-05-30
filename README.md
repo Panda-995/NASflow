@@ -37,6 +37,7 @@ ESP32-S3-Touch-LCD-5B
   HTTP polling (configurable 1-60 second interval)
   Left/right swipe page navigation (7 pages)
   Header page dots for visual page position
+  Header power capsule for battery %, charge state, and USB/battery source when optional sense lines are wired
   Embedded single full-resolution background (1024×534 RGB565 from image/1.png)
   ESP Web backend on port 80 for host/domain, port, token, and polling interval
   Colorful hand-drawn desktop ornament dashboard
@@ -91,6 +92,12 @@ English:
 3. Build and flash with `idf.py -p COM6 build flash`.
 4. After Wi-Fi connects, read the ESP address from the screen's Backend page and open `http://{ESP_IP}/` to configure the NAS hostname/IP, port, optional token, and polling interval. The Connection Test checks the NAS Agent health endpoint from the ESP itself.
 5. The device polls `http://{NAS_IP}:8088/api/v1/status` and presents metrics across swipeable pages.
+
+## Power Telemetry / 电源检测
+
+中文：右上角已经加入电源状态胶囊，可显示电量百分比、充电状态和当前供电来源。Waveshare ESP32-S3-Touch-LCD-5B 默认原理图没有把 VBAT、CHG/DONE、VBUS 检测信号接到 ESP32-S3 的 ADC/GPIO，因此未加硬件采样线时会显示“电量 -- 未知”，不会伪造数值。若后续把 VBAT 分压、CHG、DONE 或 VBUS 检测线接到空闲 GPIO，可在 `idf.py menuconfig > NASflow > Power telemetry` 填入引脚和分压比例启用真实读取。
+
+English: A power capsule has been added to the top-right header to show battery percentage, charge state, and USB/battery power source. The default Waveshare ESP32-S3-Touch-LCD-5B schematic does not route VBAT, CHG/DONE, or VBUS sense signals to ESP32-S3 ADC/GPIO pins, so without extra sense wiring it shows `电量 -- 未知` instead of fabricating values. If VBAT divider, CHG, DONE, or VBUS detect lines are later wired to spare GPIOs, configure them in `idf.py menuconfig > NASflow > Power telemetry` to enable real readings.
 
 ## Safety Boundary / 安全边界
 

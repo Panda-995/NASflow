@@ -6,7 +6,9 @@ idf_component_register(
         "board_5b.c"
         "backgrounds/bg_page_1.c"
         "fonts/lv_font_nas_cn_18.c"
+        "fonts/lv_font_nas_cn_26.c"
         "nas_status.c"
+        "power_monitor.c"
         "ui.c"
         "web_server.c"
         "wifi_manager.c"
@@ -21,6 +23,7 @@ idf_component_register(
         esp_timer
         esp_wifi
         esp_driver_i2c
+        esp_adc
         driver
         cjson
         nvs_flash

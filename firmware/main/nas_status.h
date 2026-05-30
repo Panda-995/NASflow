@@ -10,7 +10,7 @@
 #define NAS_MAX_NVME 6
 #define NAS_MAX_INTERFACES 6
 #define NAS_MAX_FANS 6
-#define NAS_MAX_CONTAINERS 10
+#define NAS_MAX_CONTAINERS 24
 #define NAS_MAX_ALERTS 8
 
 typedef struct {
@@ -191,4 +191,3 @@ bool nas_status_parse_json(const char *json, nas_status_t *status);
 void nas_format_bytes(uint64_t bytes, char *out, size_t out_size);
 void nas_format_bps(uint64_t bps, char *out, size_t out_size);
 void nas_format_uptime(uint32_t seconds, char *out, size_t out_size);
-

@@ -24,5 +24,59 @@ config NAS_DISPLAY_POLL_INTERVAL_MS
     int "Status polling interval in milliseconds"
     default 5000
 
+menu "Power telemetry"
+
+config NAS_DISPLAY_BATTERY_ADC_GPIO
+    int "Battery ADC GPIO (-1 disables battery percentage)"
+    default -1
+    help
+        The ESP32-S3-Touch-LCD-5B schematic does not route VBAT to an ESP32 ADC pin.
+        Keep this at -1 unless you add an external VBAT resistor divider to an ADC-capable GPIO.
+
+config NAS_DISPLAY_BATTERY_ADC_ATTEN_DB
+    int "Battery ADC attenuation in dB (0, 2, 6, or 12)"
+    default 12
+    help
+        ADC attenuation used for the optional battery voltage sampling pin.
+
+config NAS_DISPLAY_BATTERY_ADC_RATIO_MILLI
+    int "Battery divider ratio x1000"
+    default 2000
+    help
+        Battery voltage is calculated as ADC millivolts multiplied by this value / 1000.
+        Example: 100K/100K divider means VBAT = VADC * 2, so use 2000.
+
+config NAS_DISPLAY_CHARGE_GPIO
+    int "Charging indicator GPIO (-1 disables charge state)"
+    default -1
+    help
+        Optional GPIO connected to the charger CHRG signal. CS8501/TP4056-style CHRG is normally active low.
+
+config NAS_DISPLAY_CHARGE_ACTIVE_LOW
+    bool "Charging signal is active low"
+    default y
+
+config NAS_DISPLAY_DONE_GPIO
+    int "Charge-complete indicator GPIO (-1 disables full state)"
+    default -1
+    help
+        Optional GPIO connected to the charger STDBY/DONE signal. CS8501/TP4056-style DONE is normally active low.
+
+config NAS_DISPLAY_DONE_ACTIVE_LOW
+    bool "Charge-complete signal is active low"
+    default y
+
+config NAS_DISPLAY_USB_DETECT_GPIO
+    int "USB/VBUS detect GPIO (-1 disables power-source detection)"
+    default -1
+    help
+        Optional GPIO connected to VBUS through a safe divider or level-shifter.
+        Use this to distinguish USB/data-cable power from battery power.
+
+config NAS_DISPLAY_USB_DETECT_ACTIVE_HIGH
+    bool "USB/VBUS detect signal is active high"
+    default y
+
 endmenu
 
+endmenu
