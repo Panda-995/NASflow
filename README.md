@@ -104,3 +104,9 @@ English: A power capsule has been added to the top-right header to show battery 
 中文：NAS 探测和 Agent 设计都以只读为原则。Agent 通过 nsenter 借道宿主机 namespace 读取 `/proc`、`/sys`、挂载点、SMART、mdraid、Docker socket 等信息，不修改 NAS 文件、服务或配置。不挂载任何主机卷。
 
 English: The NAS probe and Agent design are read-only by default. The Agent uses nsenter to read `/proc`, `/sys`, mount points, SMART, mdraid, and Docker socket data from the host namespace without modifying NAS files, services, or configuration. No host volumes are mounted.
+
+---
+
+## 📄 许可证 / License
+
+本项目采用 [AGPL-3.0](LICENSE) 开源协议。
